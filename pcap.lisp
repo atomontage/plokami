@@ -55,7 +55,7 @@
 
 (define-foreign-library libpcap
   (:win32 (:default "wpcap"))
-  (:unix (:default "libpcap")))
+  (:unix (:default "libpcap"))) ; Might need fixing with new CFFI
 
 (use-foreign-library libpcap)
 
