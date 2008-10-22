@@ -263,8 +263,7 @@ only in blocking mode.")
 
 (defun make-pcap-live (interface &key promisc nbio (timeout 100) (snaplen 68))
   "Create and return a PCAP-LIVE instance. INTERFACE is a string that names
-the network interface used for capture. If omitted, one is selected
-automatically from the available ones. PROMISC should be T when capturing
+the network interface used for capture. PROMISC should be T when capturing
 in promiscuous mode, NIL otherwise. NBIO should be T when non-blocking
 operation is required. NIL otherwise (default). TIMEOUT should hold read
 timeout in milliseconds. 0 will wait forever. Only used when in blocking mode.
