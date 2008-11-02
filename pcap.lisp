@@ -41,13 +41,23 @@
 (defconstant +DLT_EN10MB+ 1)
 (defconstant +DLT_SLIP+ 8)
 (defconstant +DLT_PPP+ 9)
+(defconstant +DLT_PPP_BSDOS1+ 14)
+(defconstant +DLT_PPP_BSDOS2+ 16)
+(defconstant +DLT_PPP_SERIAL+ 50)
+(defconstant +DLT_PPP_ETHER+ 51)
+(defconstant +DLT_PPP_PPPD+ 166)
 
 ;; Supported datalink types
 (defparameter *supported-datalinks*
   `(("NULL" . ,+DLT_NULL+)
     ("EN10MB" . ,+DLT_EN10MB+)
     ("SLIP" . ,+DLT_SLIP+)
-    ("PPP" . ,+DLT_PPP+)))
+    ("PPP" . ,+DLT_PPP+)
+    ("PPP-BSDOS" . ,+DLT_PPP_BSDOS1+)
+    ("PPP-BSDOS" . ,+DLT_PPP_BSDOS2+)
+    ("PPP-SERIAL" . ,+DLT_PPP_SERIAL+)
+    ("PPP-ETHER" . ,+DLT_PPP_ETHER+)
+    ("PPP-PPPD" . ,+DLT_PPP_PPPD+)))
 
 
 (defparameter *pcap-version* nil) ; PCAP library version string
