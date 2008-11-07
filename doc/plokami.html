@@ -120,6 +120,10 @@ For feature-requests, questions, patches email me at
 <h3><a class=none name="examples">Examples</a></h3>
 
 List interfaces (addresses will not show up correctly on win32)
+If <a href="#find-all-devs"><code>find-all-devs</code></a>
+ returns NIL, make sure you have appropriate permissions for
+ packet capture (read access on /dev/bpf* devices for OSX/BSD,
+ root on linux).
 
 <pre>
 PLOKAMI> (find-all-devs)
