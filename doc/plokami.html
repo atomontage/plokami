@@ -198,7 +198,7 @@ platform. Also see <a href="http://www.mail-archive.com/winpcap-users@winpcap.po
 <blockquote><br>
 
 Create and return a PCAP-LIVE instance. INTERFACE is a string that names
-the network interface used for capture. If omitted, one is selected
+the network interface used for capture. If NIL, one is selected
 automatically from the available ones. PROMISC should be T when capturing
 in promiscuous mode, NIL otherwise. NBIO should be T when non-blocking
 operation is required. NIL otherwise (default). TIMEOUT should hold read
@@ -469,7 +469,8 @@ Number of bytes to write per packet processed.
 
 Set a packet filter on a PCAP-LIVE or PCAP-READER instance.
 The filter should be given as a BPF expression in STRING. <a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a>
-is signalled on failure.
+is signalled on failure. A restart, CONTINUE-NO-FILTER,
+is also setup that can be invoked to continue.
 
 </blockquote>
 

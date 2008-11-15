@@ -370,7 +370,7 @@ NETWORK-INTERFACE-ERROR is signalled on failure."))
 (defgeneric set-filter (pcap-process-mixin string)
   (:documentation "Set a packet filter on a PCAP-LIVE or PCAP-READER instance.
 The filter should be given as a BPF expression in STRING. PACKET-FILTER-ERROR
-is signalled on failure."))
+is signalled on failure. Also, a restart CONTINUE-NO-FILTER is setup that can be invoked to continue."))
 
 
 (defgeneric dump (pcap-writer data &key length origlength sec usec)
