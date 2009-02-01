@@ -35,6 +35,7 @@
            :pcap-live-interface        ; [reader]
            :pcap-live-promisc          ; [reader]
            :pcap-live-timeout          ; [reader]
+           :pcap-live-descriptor       ; [reader]
            :pcap-live-alive            ; [reader]
            :pcap-live-datalink         ; [reader]
            :pcap-live-snaplen          ; [reader]

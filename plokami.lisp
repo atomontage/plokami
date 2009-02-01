@@ -79,16 +79,16 @@
 
 ;;; Globals
 
-(defparameter *callbacks*
+(defvar *callbacks*
   #+:sb-thread (make-hash-table :synchronized t)
   #-:sb-thread (make-hash-table)
   )
 
 
-(defparameter *concurrentpcap* 1)
+(defvar *concurrentpcap* 1)
 
 #+:sb-thread
-(defparameter *concurrentpcap-mutex* (sb-thread:make-mutex
+(defvar *concurrentpcap-mutex* (sb-thread:make-mutex
                                       :name "*concurrent-pcap* lock"))
 
              
@@ -210,6 +210,9 @@ values."
     :initform 100
     :documentation "Read timeout in milliseconds. 0 will wait forever. Obeyed
 only in blocking mode.")
+   (descriptor
+    :reader pcap-live-descriptor
+    :documentation "File descriptor that can be used with epoll/kqueue/select.")
    ;; Provide reader for inherited slots
    (live :reader pcap-live-alive)
    (datalink :reader pcap-live-datalink)
@@ -407,7 +410,7 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
 ;; Signals network-interface-error
 (defmethod initialize-instance :after ((cap pcap-live) &key)
   (with-slots (pcap_t interface snaplen promisc timeout datalink buffer handler
-                      hashkey hashkey-pointer live non-block)
+                      hashkey hashkey-pointer live non-block descriptor)
       cap
     (with-error-buffer (eb)
       ;; No interface given, call lookupdev to get one
@@ -435,6 +438,7 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
           (setf datalink (car dlink)))
         (setf buffer (make-array snaplen :element-type
                                  '(unsigned-byte 8))
+              descriptor (%pcap-fileno pcap_t)
               live t)
         ;; Hash pcap instance for callback discovery
         #+:sb-thread
