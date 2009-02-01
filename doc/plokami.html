@@ -38,7 +38,7 @@ interface is implemented in <strong>plokami.lisp</strong> and documented here.
 <p>
 <strong>Supported:</strong> Realtime network packet capture, PCAP dumpfile
 reading/writing, BPF, timeouts and operation in non-blocking mode.<br>
-Also, support exists for win32 through <a href="http://www.winpcap.org">winpcap</a>
+Also, full support for Win32 through <a href="http://www.winpcap.org">winpcap</a>
 but see <a href="#winpcap">here</a>. The library has been tested on <a href="http://sbcl.sf.net">SBCL</a>
 (linux/darwin), <a href="http://clozure.com/clozurecl.html">ClozureCL</a> 
 and <a href="http://www.lispworks.com">Lispworks</a> (darwin/win32) but should work
@@ -123,13 +123,14 @@ Try it if you are having problems with stable.
 
 <h3><a class=none name="examples">Examples</a></h3>
 
-List interfaces (addresses will not show up correctly on win32)
+List interfaces (addresses will not show up correctly on Win32)<br>
 If <a href="#find-all-devs"><code>find-all-devs</code></a>
  returns NIL, make sure you have appropriate permissions for
- packet capture (read access on /dev/bpf* devices for OSX/BSD,
- root on linux).
+ packet capture <br>
+(read access on /dev/bpf* devices for OSX/BSD, root on Linux).
 
 <pre>
+;; Result list layout mirrors the one explained in <strong>pcap_findalldevs(3)</strong>
 PLOKAMI> (find-all-devs)
 (("lo0" NIL 1
   (((:ADDR :AF_INET "127.0.0.1") (:NETMASK :AF_INET "255.0.0.0"))
@@ -165,10 +166,10 @@ and write them out to a PCAP dumpfile. Interrupt lisp to clean up and exit.
     (loop
        (capture <font color=red>pcap</font> -1
                 #'(lambda (<strong>sec usec caplen len buffer</strong>)
-<font color=purple>                    ;; sec and usec at the time of the capture
-                    ;; caplen -> size of captured packet
-                    ;; len -> original size of packet (may be > caplen, depends on snaplen)
-                    ;; buffer -> byte vector with packet contents</font>
+<font color=purple>                    ;; sec and usec: time of the capture (since UNIX epoch)
+                    ;; caplen: size of captured packet
+                    ;; len: original size of packet (may be > caplen, depends on snaplen)
+                    ;; buffer: byte vector with packet contents</font>
                     (dump <font color=green>writer</font> <strong>buffer</strong> :length <strong>caplen</strong>
                           :origlength <strong>len</strong> :sec <strong>sec</strong> :usec <strong>usec</strong>)
                     (format t "Captured ~A bytes [~A]~%" caplen len))))))
@@ -183,9 +184,9 @@ Read all packets available in PCAP dumpfile <i>session.pcap</i> and process them
                        )))
 </pre>
 
-In all cases, BUFFER vector used in callback supplied to <a href="#capture"><code>capture</code></a> is 
-statically allocated and is overwritten every time <a href="#capture"><code>capture</code></a>
-gets called. If packet persistence is required, its contents should be copied
+In all cases, BUFFER vector used in callback <i>handler</i> supplied to <a href="#capture"><code>capture</code></a> is 
+allocated once per pcap instance and is overwritten every time <a href="#capture"><code>capture</code></a>
+gets called. If packet persistence is required, BUFFER contents should be copied
 before <a href="#capture"><code>capture</code></a> gets called again.
 <p>
 <a class=none name="winpcap">Under</a> win32/winpcap, <i>SNAPLEN</i> only takes effect when a filter is used.
@@ -205,10 +206,9 @@ Create and return a PCAP-LIVE instance. INTERFACE is a string that names
 the network interface used for capture. If NIL, one is selected
 automatically from the available ones. PROMISC should be T when capturing
 in promiscuous mode, NIL otherwise. NBIO should be T when non-blocking
-operation is required. NIL otherwise (default). TIMEOUT should hold read
-timeout in milliseconds. 0 will wait forever. Only used when in blocking mode.
-SNAPLEN should contain the number of bytes captured per packet. Default
-is 68 which should be enough for headers.
+operation is required. TIMEOUT should hold read
+timeout in milliseconds. 0 will wait until a packet arrives.
+TIMEOUT only takes effect when in blocking mode. SNAPLEN should contain the number of bytes to  capture per packet. Default is 68 which should be enough for headers.
 
 </blockquote>
 
@@ -221,7 +221,7 @@ is 68 which should be enough for headers.
 <blockquote><br>
 
 Create and return a PCAP-READER instance. FILE is the filename to open and
-read packets from. SNAPLEN should contain the number of bytes read per packet
+read packets from. SNAPLEN should contain the number of bytes to read per packet
 captured. Default is 68 which should be enough for headers.
 
 </blockquote>
@@ -237,8 +237,8 @@ captured. Default is 68 which should be enough for headers.
 Create and return a PCAP-WRITER instance. FILE is the filename to open and
 dump packets to. DATALINK should contain a string that represents the datalink
 protocol of the network interface used to capture the packets. Default is
-Ethernet. SNAPLEN should contain the number of bytes read per packet captured
-and should be the same as the one used when capturing/reading packets.
+Ethernet. SNAPLEN should contain the number of bytes read per packet
+captured and should be the same as the one used when capturing/reading packets.
 
 </blockquote>
 
@@ -312,8 +312,7 @@ Return snapshot length (how many bytes to capture per packet) for PCAP-LIVE obje
 <p><br>[Method]<br><a class=none name='pcap-live-timeout'><b>pcap-live-timeout</b> <i>(object pcap-live)</i> =&gt; <i>result</i></a>
 <blockquote><br>
 
-Read timeout in milliseconds. 0 will wait forever. Only used in
-blocking mode.
+Read timeout in milliseconds. 0 will wait until a packet arrives. Only takes effect in blocking mode.
 
 </blockquote>
 
@@ -399,7 +398,7 @@ Number of bytes to read per packet processed.
 <p><br>[Method]<br><a class=none name='pcap-reader-swapped'><b>pcap-reader-swapped</b> <i>(object pcap-reader)</i> =&gt; <i>result</i></a>
 <blockquote><br>
 
-Savefile uses different byte order from host system.
+T if savefile uses different byte order from host system.
 
 </blockquote>
 
@@ -474,7 +473,7 @@ Number of bytes to write per packet processed.
 Set a packet filter on a PCAP-LIVE or PCAP-READER instance.
 The filter should be given as a BPF expression in STRING. <a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a>
 is signalled on failure. A restart, CONTINUE-NO-FILTER,
-is also setup that can be invoked to continue.
+is also setup that can be invoked to continue without the filter setup.
 
 </blockquote>
 
@@ -483,10 +482,10 @@ is also setup that can be invoked to continue.
 
 <!-- Entry for SET-NONBLOCK -->
 
-<p><br>[Generic function]<br><a class=none name='set-nonblock'><b>set-nonblock</b> <i>pcap-live block-mode</i> =&gt; <i>result</i></a>
+<p><br>[Generic function]<br><a class=none name='set-nonblock'><b>set-nonblock</b> <i>pcap-live mode</i> =&gt; <i>result</i></a>
 <blockquote><br>
 
-Set non-blocking mode if BLOCK-MODE is T, blocking
+Set non-blocking mode if MODE is T, blocking
 mode if NIL. <a href="#block-mode-error"><code>BLOCK-MODE-ERROR</code></a> is signalled on failure and a restart
 is setup, that can be invoked to continue.
 
