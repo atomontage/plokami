@@ -128,8 +128,8 @@ values."
     (with-foreign-slots ((tv_sec tv_usec) tv timeval)
       (values tv_sec tv_usec))))
 
-;; This is passed to the C side and when called, invokes the lisp packet handler
-;; that the user defined (slot /handler/ in pcap-process-mixin) 
+;;; This is passed to the foreign side and when called, invokes the lisp
+;;; packet handler that the user defined (slot /handler/ in pcap-process-mixin) 
 (defcallback pcap-handler :void
     ((user :pointer) (pkthdr :pointer)
      (bytes :pointer))
@@ -203,15 +203,15 @@ values."
    (non-block
     :initarg :nbio
     :initform nil
-    :documentation "True if pcap descriptor in non-blocking mode.")
+    :documentation "True if pcap descriptor is in non-blocking mode.")
    (timeout
     :initarg :timeout
     :reader pcap-live-timeout
     :initform 100
-    :documentation "Read timeout in milliseconds. 0 will wait forever. Obeyed
-only in blocking mode.")
+    :documentation "Read timeout in milliseconds. 0 will wait forever. Only works in blocking mode/platforms that support it. No guarantee of returning within timeout.")
    (descriptor
     :reader pcap-live-descriptor
+    :initform nil
     :documentation "File descriptor that can be used with epoll/kqueue/select.")
    ;; Provide reader for inherited slots
    (live :reader pcap-live-alive)
@@ -269,7 +269,9 @@ only in blocking mode.")
 the network interface used for capture. PROMISC should be T when capturing
 in promiscuous mode, NIL otherwise. NBIO should be T when non-blocking
 operation is required. NIL otherwise (default). TIMEOUT should hold read
-timeout in milliseconds. 0 will wait forever. Only used when in blocking mode.
+timeout in milliseconds. 0 will wait forever. Only used when in blocking mode
+and only in platforms that support it. No guarantee of actually returning
+within TIMEOUT is made. Use non-blocking mode if that is not adequate.
 SNAPLEN should contain the number of bytes captured per packet. Default
 is 68 which should be enough for headers."
   (make-instance 'pcap-live :if interface  :promisc promisc :nbio nbio
@@ -438,7 +440,6 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
           (setf datalink (car dlink)))
         (setf buffer (make-array snaplen :element-type
                                  '(unsigned-byte 8))
-              descriptor (%pcap-fileno pcap_t)
               live t)
         ;; Hash pcap instance for callback discovery
         #+:sb-thread
@@ -535,11 +536,17 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
 ;; Signals block-mode-error
 (defmethod set-nonblock ((cap pcap-live) block-mode)
   (restart-case      
-      (with-slots (pcap_t) cap
+      (with-slots (pcap_t non-block descriptor) cap
         (with-error-buffer (eb)
           (when (= -1 (%pcap-setnonblock pcap_t block-mode eb))
             (error 'block-mode-error :text
-                   (error-buffer-to-lisp eb)))))
+                   (error-buffer-to-lisp eb))))
+        (let ((fd (%pcap-get-selectable-fd pcap_t)))
+          (when (= -1 fd)
+            (setf fd nil)
+            (warn "Non-blocking mode requested, selectable FD not available."))
+          (setf non-block block-mode
+                descriptor fd)))
     (continue-block-mode () (warn "Error setting non-blocking mode."))))
   
   
