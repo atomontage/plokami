@@ -45,6 +45,21 @@ and <a href="http://www.lispworks.com">Lispworks</a> (darwin/win32) but should w
 on every platform that <a href="http://common-lisp.net/project/cffi/">CFFI</a>
 supports.</p>
 
+<p><strong>Performance:</strong> Minimal/non-existent overhead over plain
+libpcap. Low memory use with very few dynamic allocations. GC delays/packet loss
+should not be an issue.</p>
+<p><strong>NOTE:</strong> Read timeouts, non-blocking mode operation and the
+use of select/epoll/kqueue on the live interface file descriptor (as returned
+by <a href="#pcap-live-descriptor"><code>pcap-live-descriptor</code></a>)
+depend on support from operating system/libpcap. If things involving these
+operations do not work as they should, consult libpcap documentation
+and platform specific notes.
+<br>The file descriptor
+can not be used with <strong>kqueue</strong> on OSX (known OSX issue)
+although the same file descriptor works fine with <strong>select</strong>.
+Recent FreeBSD versions have fixed this and <strong>kqueue</strong> works
+with no issues on these platforms.</p>
+
 <p>
 The code comes with
 a <a
@@ -120,19 +135,6 @@ For feature-requests, questions, patches email me at
 <p> Latest <strong>DEVELOPMENT</strong> version in <a href="http://www.suspicious.org/~night/plokami.git/">git</a>.
 Try it if you are having problems with stable.
 </p>
-
-<p><strong>NOTE:</strong> Read timeouts, non-blocking mode operation and the
-use of select/epoll/kqueue on the live interface file descriptor (as returned
-by <a href="#pcap-live-descriptor"><code>pcap-live-descriptor</code></a>)
-depend on support from operating system/libpcap. If things involving these
-operations do not work as they should, consult libpcap documentation
-and platform specific notes.
-<br>The file descriptor
-can not be used with <strong>kqueue</strong> on OSX (known OSX issue)
-although the same file descriptor works fine with <strong>select</strong>.
-Recent FreeBSD versions have fixed this and <strong>kqueue</strong> works
-with no issues on these platforms.</p>
-
 
 <br>&nbsp;<br><h3><a class=none name="examples">Examples</a></h3>
 
