@@ -29,15 +29,16 @@
 ;;;; Lispy interface to libpcap
 ;;;;
 ;;;;
-;;;; DONE: BPF, dumpfile input, dumpfile output, live capture, nbio
-;;;; SBCL: Locking done, optimized C->lisp buffer copying.
-;;;;
+;;;; DONE: BPF, dumpfile input, dumpfile output, live capture, nbio.
+;;;; SBCL: Locking done, optimized buffer copying.
+;;;; CCL: Locking done.
+;;;; TODO-ClozureCL: Optimize buffer copying.
 ;;;;
 ;;;; When using two pcap instances to capture packets at the same time
 ;;;; on different threads, access to *callbacks* and *concurrentpcap*
-;;;; should be synchronized according to implementation.
+;;;; should be synchronized according to implementation. This is currently
+;;;; implemented only for SBCL and CCL.
 ;;;;
-;;;; TODO CCL: Add locking and optimize buffer copying C->lisp.
 ;;;;
 ;;;; How to use:
 ;;;;
@@ -80,19 +81,21 @@
 ;;; Globals
 
 (defvar *callbacks*
-  #+:sb-thread (make-hash-table :synchronized t)
-  #-:sb-thread (make-hash-table)
+  #+sb-thread (make-hash-table :synchronized t)
+  #+openmcl-native-threads (make-hash-table :shared t)
+  #-(or sb-thread openmcl-native-threads) (make-hash-table)
   )
-
 
 (defvar *concurrentpcap* 1)
 
-#+:sb-thread
-(defvar *concurrentpcap-mutex* (sb-thread:make-mutex
-                                      :name "*concurrent-pcap* lock"))
+(defvar *concurrentpcap-mutex*
+  #+sb-thread (sb-thread:make-mutex :name "*concurrent-pcap* lock")
+  #+openmcl-native-threads (ccl:make-lock)
+  #-(or :sb-thread :openmcl-native-threads)
+  (progn (warn "Locking not done on this lisp implementation.") nil)
+  )
 
-             
-
+  
 ;;; ------------------------------
 ;;; Internal Functions
 
@@ -442,12 +445,17 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
                                  '(unsigned-byte 8))
               live t)
         ;; Hash pcap instance for callback discovery
-        #+:sb-thread
+        #+sb-thread
         (sb-thread:with-mutex (*concurrentpcap-mutex*)
           (setf (gethash *concurrentpcap* *callbacks*) cap
                 hashkey *concurrentpcap*)
           (incf *concurrentpcap*))
-        #-:sb-thread
+        #+openmcl-native-threads
+        (ccl:with-lock-grabbed (*concurrentpcap-mutex*)
+          (setf (gethash *concurrentpcap* *callbacks*) cap
+                hashkey *concurrentpcap*)
+          (incf *concurrentpcap*))
+        #-(or sb-thread openmcl-native-threads)
         (progn
           (setf (gethash *concurrentpcap* *callbacks*) cap
               hashkey *concurrentpcap*)
@@ -482,12 +490,17 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
                 minor (%pcap-minor-version pcap_t)
                 live t)
           ;; Hash pcap instance for callback discovery
-          #+:sb-thread
+          #+sb-thread
           (sb-thread:with-mutex (*concurrentpcap-mutex*)
             (setf (gethash *concurrentpcap* *callbacks*) cap
                   hashkey *concurrentpcap*)
             (incf *concurrentpcap*))
-          #-:sb-thread
+          #+openmcl-native-threads
+          (ccl:with-lock-grabbed (*concurrentpcap-mutex*)
+            (setf (gethash *concurrentpcap* *callbacks*) cap
+                  hashkey *concurrentpcap*)
+            (incf *concurrentpcap*))
+          #-(or sb-thread openmcl-native-threads)
           (progn
             (setf (gethash *concurrentpcap* *callbacks*) cap
                   hashkey *concurrentpcap*)
