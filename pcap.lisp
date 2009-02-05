@@ -60,7 +60,8 @@
     ("PPP-PPPD" . ,+DLT_PPP_PPPD+)))
 
 
-(defparameter *pcap-version* nil) ; PCAP library version string
+(defparameter *pcap-version* nil
+  "Version of native libpcap library.")
 
 
 (define-foreign-library libpcap

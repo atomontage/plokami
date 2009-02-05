@@ -121,14 +121,27 @@ For feature-requests, questions, patches email me at
 Try it if you are having problems with stable.
 </p>
 
+<p><strong>NOTE:</strong> Read timeouts, non-blocking mode operation and the
+use of select/epoll/kqueue on the live interface file descriptor (as returned
+by <a href="#pcap-live-descriptor"><code>pcap-live-descriptor</code></a>)
+depend on support from operating system/libpcap. If things involving these
+operations do not work as they should, consult libpcap documentation
+and platform specific notes.
+<br>The file descriptor
+can not be used with <strong>kqueue</strong> on OSX (known OSX issue)
+although the same file descriptor works fine with <strong>select</strong>.
+Recent FreeBSD versions have fixed this and <strong>kqueue</strong> works
+with no issues on these platforms.</p>
 
-<h3><a class=none name="examples">Examples</a></h3>
 
-List interfaces (addresses will not show up correctly on Win32)<br>
+<br>&nbsp;<br><h3><a class=none name="examples">Examples</a></h3>
+
+List interfaces (addresses will not show up correctly on Win32, patches
+welcome)<br>
 If <a href="#find-all-devs"><code>find-all-devs</code></a>
  returns NIL, make sure you have appropriate permissions for
  packet capture <br>
-(read access on /dev/bpf* devices for OSX/BSD, root on Linux).
+(read access on /dev/bpf* devices for OSX/BSD, root/CAP_NET_RAW on Linux).
 
 <pre>
 ;; Result list layout mirrors the one explained in <strong>pcap_findalldevs(3)</strong>
@@ -160,18 +173,18 @@ Read packets from the network in realtime, filter for <strong>IP</strong>, proce
 and write them out to a PCAP dumpfile. Interrupt lisp to clean up and exit.
 
 <pre>
-(with-pcap-interface (<font color=red>pcap</font> "en0" :promisc t :snaplen 1500 :timeout 2000)
-  (with-pcap-writer (<font color=green>writer</font> "session.pcap" :snaplen 1500 :datalink
-                            (pcap-live-datalink <font color=red>pcap</font>))
-    (set-filter <font color=red>pcap</font> "ip")
+(with-pcap-interface (<strong><font color=red>pcap</font></strong> "en0" :promisc t :snaplen 1500 :timeout 2000)
+  (with-pcap-writer (<strong><font color=teal>writer</font></strong> "session.pcap" :snaplen 1500 :datalink
+                            (pcap-live-datalink <strong><font color=red>pcap</font></strong>))
+    (set-filter <strong><font color=red>pcap</font></strong> "ip")
     (loop
-       (capture <font color=red>pcap</font> -1
+       (capture <strong><font color=red>pcap</font></strong> -1
                 #'(lambda (<strong>sec usec caplen len buffer</strong>)
-<font color=purple>                    ;; sec and usec: time of the capture (since UNIX epoch)
+<strong><font color=purple>                    ;; sec and usec: capture timestamp (UNIX epoch time)
                     ;; caplen: size of captured packet
                     ;; len: original size of packet (may be > caplen, depends on snaplen)
-                    ;; buffer: byte vector with packet contents</font>
-                    (dump <font color=green>writer</font> <strong>buffer</strong> :length <strong>caplen</strong>
+                    ;; buffer: byte vector with packet contents</font></strong>
+                    (dump <strong><font color=teal>writer</font> buffer</strong> :length <strong>caplen</strong>
                           :origlength <strong>len</strong> :sec <strong>sec</strong> :usec <strong>usec</strong>)
                     (format t "Captured ~A bytes [~A]~%" caplen len))))))
 </pre>
@@ -179,9 +192,9 @@ and write them out to a PCAP dumpfile. Interrupt lisp to clean up and exit.
 Read all packets available in PCAP dumpfile <i>session.pcap</i> and process them.
 
 <pre>
-(with-pcap-reader (<font color=red>reader</font> "session.pcap" :snaplen 1500)
-  (capture <font color=red>reader</font> -1 #'(lambda (sec usec caplen len buffer)
-                       <font color=purple>;; packet processing code here</font>
+(with-pcap-reader (<strong><font color=red>reader</font></strong> "session.pcap" :snaplen 1500)
+  (capture <strong><font color=red>reader</font></strong> -1 #'(lambda (sec usec caplen len buffer)
+                       <strong><font color=purple>;; packet processing code here</font></strong>
                        )))
 </pre>
 

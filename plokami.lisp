@@ -357,8 +357,7 @@ will overwrite its contents and if packet persistence is required, contents of
 BUFFER should be copied somewhere else from within HANDLER. If an error occurs,
 PACKET-CAPTURE-ERROR is signalled for live interfaces and CAPTURE-FILE-ERROR
 for pcap dumpfiles. For more details on callback handling, see CFFI callback
-PCAP-HANDLER. Finally, read timeouts as given during PCAP-LIVE instantiation
-are used only when in blocking mode."))
+PCAP-HANDLER."))
 
 (defgeneric set-nonblock (pcap-live block-mode)
   (:documentation "Set non-blocking mode if BLOCK-MODE is T, blocking
@@ -375,7 +374,8 @@ NETWORK-INTERFACE-ERROR is signalled on failure."))
 (defgeneric set-filter (pcap-process-mixin string)
   (:documentation "Set a packet filter on a PCAP-LIVE or PCAP-READER instance.
 The filter should be given as a BPF expression in STRING. PACKET-FILTER-ERROR
-is signalled on failure. Also, a restart CONTINUE-NO-FILTER is setup that can be invoked to continue."))
+is signalled on failure. Also, a restart CONTINUE-NO-FILTER is setup that
+can be invoked to continue."))
 
 
 (defgeneric dump (pcap-writer data &key length origlength sec usec)
@@ -641,7 +641,7 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
 ;; Should not blow up if something bad happens...
 (defun find-all-devs ()
   "Return a list of all network devices that can be opened for capture. Result
-list mirrors layout explained in pcap_findalldevs()."
+list mirrors layout explained in pcap_findalldevs(3)."
   (with-error-buffer (eb)
     (with-foreign-pointer (devp 4)
       (when (= -1 (%pcap-findalldevs devp eb))
