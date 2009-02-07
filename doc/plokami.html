@@ -171,11 +171,10 @@ PLOKAMI> (find-all-devs)
 </pre>
 
 
-Read packets from the network in realtime, filter for <strong>IP</strong>, process 
-and write them out to a PCAP dumpfile. Interrupt lisp to clean up and exit.
+Read packets from the network in non-blocking mode, filter for <strong>IP</strong>, process and write them out to a PCAP dumpfile. Interrupt lisp to clean up and exit.
 
 <pre>
-(with-pcap-interface (<strong><font color=red>pcap</font></strong> "en0" :promisc t :snaplen 1500 :timeout 2000)
+(with-pcap-interface (<strong><font color=red>pcap</font></strong> "en0" :promisc t :snaplen 1500 :nbio t)
   (with-pcap-writer (<strong><font color=teal>writer</font></strong> "session.pcap" :snaplen 1500 :datalink
                             (pcap-live-datalink <strong><font color=red>pcap</font></strong>))
     (set-filter <strong><font color=red>pcap</font></strong> "ip")
@@ -188,7 +187,8 @@ and write them out to a PCAP dumpfile. Interrupt lisp to clean up and exit.
                     ;; buffer: byte vector with packet contents</font></strong>
                     (dump <strong><font color=teal>writer</font> buffer</strong> :length <strong>caplen</strong>
                           :origlength <strong>len</strong> :sec <strong>sec</strong> :usec <strong>usec</strong>)
-                    (format t "Captured ~A bytes [~A]~%" caplen len))))))
+                    (format t "Captured ~A bytes [~A]~%" caplen len)))
+        (sleep 0.01))))
 </pre>
 
 Read all packets available in PCAP dumpfile <i>session.pcap</i> and process them.

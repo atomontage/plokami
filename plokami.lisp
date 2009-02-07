@@ -30,15 +30,28 @@
 ;;;;
 ;;;;
 ;;;; DONE: BPF, dumpfile input, dumpfile output, live capture, nbio.
-;;;; SBCL: Locking done, optimized buffer copying.
-;;;; CCL: Locking done.
 ;;;; TODO-ClozureCL: Optimize buffer copying.
 ;;;;
-;;;; When using two pcap instances to capture packets at the same time
+;;;; When using multiple pcap instances to capture packets at the same time
 ;;;; on different threads, access to *callbacks* and *concurrentpcap*
 ;;;; should be synchronized according to implementation. This is currently
 ;;;; implemented only for SBCL and CCL.
 ;;;;
+;;;; Also, thread safety of libpcap itself is not clearly defined so proceed
+;;;; with caution. Multithreading seems to work fine here apart from
+;;;; pcap_compile which uses global data structures and should only be called
+;;;; in a synchronized way. This is done in set-filter for SBCL and CCL using
+;;;; *compile-mutex*.
+;;;;
+;;;; Finally, read timeouts on live packet capture are not supported on every
+;;;; platform. This is a libpcap/operating system issue. If in doubt, read
+;;;; the platform specific libpcap documentation and experiment.
+;;;; You should not depend on read timeouts firing (ie. capture returning
+;;;; within timeout) if your code needs to run on multiple operating systems.
+;;;;
+;;;; The best way to make sure that capture does not wait forever, is to use
+;;;; non-blocking mode in combination with your own event notification scheme
+;;;; (select/epoll/kqueue etc)
 ;;;;
 ;;;; How to use:
 ;;;;
@@ -54,25 +67,30 @@
 
 ;;;; Examples:
 ;;;;
-;;;; Read/process packets in realtime, also writing them to dumpfile.
+;;;; Read/process/dump packets in realtime, do not block.
 ;;;; Interrupt to cleanup and exit.
 
-;;;; (with-pcap-interface (pcap "en0" :promisc t :snaplen 1500 :timeout 2000)
-;;;;   (with-pcap-writer (writer "session.pcap" :snaplen 1500 :datalink
-;;;;                             (pcap-live-datalink pcap))
-;;;;     (loop
-;;;;        (capture pcap -1
-;;;;                 #'(lambda (sec usec caplen len buffer)
-;;;;                     ;; sec and usec at the time of the capture
-;;;;                     ;; caplen -> size of captured packet
-;;;;                     ;; len -> original size of packet
-;;;;                     ;; (may be > caplen, depends on snaplen)
-;;;;                     ;; buffer -> byte vector with packet contents
-;;;;                     (dump writer buffer :length caplen
-;;;;                           :origlength len :sec sec :usec usec)
-;;;;                     (format t
-;;;;                             "Captured packet, size: ~A original: ~A~%"
-;;;;                             caplen len))))))
+#|
+(with-pcap-interface (pcap "en0" :promisc t :snaplen 1500 :nbio t)
+  (with-pcap-writer (writer "session.pcap" :snaplen 1500 :datalink
+                            (pcap-live-datalink pcap))
+    (loop
+       (capture pcap -1
+                #'(lambda (sec usec caplen len buffer)
+                    ;; sec and usec at the time of the capture
+                    ;; caplen -> size of captured packet
+                    ;; len -> original size of packet
+                    ;; (may be > caplen, depends on snaplen)
+                    ;; buffer -> byte vector with packet contents
+                    (dump writer buffer :length caplen
+                          :origlength len :sec sec :usec usec)
+                    (format t
+                            "Captured packet, size: ~A original: ~A~%"
+                            caplen len)))
+       ;; Better to use select/epoll/kqueue on pcap-live-descriptor
+       ;; Sleep will have to do for this example
+       (sleep 0.01))))
+|#
 
 
 
@@ -93,6 +111,15 @@
   #+openmcl-native-threads (ccl:make-lock)
   #-(or :sb-thread :openmcl-native-threads)
   (progn (warn "Locking not done on this lisp implementation.") nil)
+  )
+
+;; Mutex for pcap_compile which is not thread safe
+(defvar *compile-mutex*
+  #+sb-thread (sb-thread:make-mutex :name "*compile-mutex* lock")
+  #+openmcl-native-threads (ccl:make-lock)
+  #-(or :sb-thread :openmcl-native-threads)
+  (progn (warn "Locking for set-filter not done on this lisp implementation.")
+         nil)
   )
 
 
@@ -400,6 +427,13 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
 (defmethod stop progn ((cap pcap-process-mixin))
   (with-slots (live hashkey hashkey-pointer) cap
     (when live
+      #+sb-thread
+      (sb-thread:with-mutex (*concurrentpcap-mutex*)
+          (remhash hashkey *callbacks*))
+      #+openmcl-native-threads
+      (ccl:with-lock-grabbed (*concurrentpcap-mutex*)
+        (remhash hashkey *callbacks*))
+      #-(or sb-thread openmcl-native-threads)
       (remhash hashkey *callbacks*)
       (foreign-free hashkey-pointer))))
 
@@ -586,8 +620,19 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
                                  (fp 'bpf_program))
             (when (= -1 (%pcap-lookupnet interface netp maskp eb))
               (error 'packet-filter-error :text (error-buffer-to-lisp eb)))
-            (when (= -1 (%pcap-compile pcap_t fp filter 1
-                                       (mem-aref maskp :uint32)))
+            (when (= -1
+                     #+sb-thread
+                     (sb-thread:with-mutex (*compile-mutex*)
+                       (%pcap-compile pcap_t fp filter 1
+                                      (mem-aref maskp :uint32)))
+                     #+openmcl-native-threads
+                     (ccl:with-lock-grabbed (*compile-mutex*)
+                       (%pcap-compile pcap_t fp filter 1
+                                      (mem-aref maskp :uint32)))
+                     #-(or :sb-thread :openmcl-native-threads)
+                     (%pcap-compile pcap_t fp filter 1
+                                    (mem-aref maskp :uint32))
+                     )
               (error 'packet-filter-error :text (%pcap-geterr pcap_t)))
             (when (= -1 (%pcap-setfilter pcap_t fp))
               (%pcap-freecode fp)
@@ -601,7 +646,16 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
   (restart-case
       (with-slots (pcap_t) cap
         (with-foreign-object (fp 'bpf_program)
-          (when (= -1 (%pcap-compile pcap_t fp filter 1 0))
+          (when (= -1
+                   #+sb-thread
+                   (sb-thread:with-mutex (*compile-mutex*)
+                     (%pcap-compile pcap_t fp filter 1 0))
+                   #+openmcl-native-threads
+                   (ccl:with-lock-grabbed (*compile-mutex*)
+                     (%pcap-compile pcap_t fp filter 1 0))
+                   #-(or :sb-thread :openmcl-native-threads)
+                   (%pcap-compile pcap_t fp filter 1 0)
+                   )
             (error 'packet-filter-error :text (%pcap-geterr pcap_t)))
           (when (= -1 (%pcap-setfilter pcap_t fp))
             (%pcap-freecode fp)
