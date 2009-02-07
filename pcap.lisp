@@ -25,12 +25,12 @@
 ;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;;;;
-;;;; pcap.lisp 
+;;;; pcap.lisp
 ;;;; CFFI binding to libpcap
 ;;;;
 ;;;; Contains bindings to every function available
 ;;;; in libpcap. Direct usage of these functions is not recommended.
-;;;; 
+;;;;
 
 (in-package :plokami)
 
@@ -91,7 +91,7 @@
 (defcstruct pcap_if_t
   "Pcap interface structure."
   (next :pointer)                     ; pcap_if_t *
-  (name :string)                      
+  (name :string)
   (description :string)
   (addresses :pointer)                 ; pcap_addr_t *
   (flags :uint32))
@@ -162,7 +162,7 @@
   (snaplen :int)
   (promisc :boolean)
   (to_ms :int)
-  (errbuf :pointer))                  ; char * 
+  (errbuf :pointer))                  ; char *
 
 (defcfun ("pcap_open_dead" %pcap-open-dead) :pointer ; pcap_t *
   (linktype :int)
@@ -207,7 +207,7 @@
   (cnt :int)
   ; void (*pcap_handler) (u_char *user,const struct pcap_pkthdr *h, const
   ;                       u_char *bytes
-  (callback :pointer) 
+  (callback :pointer)
   (user :pointer))                    ; uchar *, gets passed to handler
 
 (defcfun ("pcap_loop" %pcap-loop) :int
@@ -233,7 +233,7 @@
 
 (defcfun ("pcap_setfilter" %pcap-setfilter) :int
   (pcap_t :pointer)                   ; pcap_t *
-  (fp :pointer))                      ; bpf_program * 
+  (fp :pointer))                      ; bpf_program *
 
 (defcfun ("pcap_freecode" %pcap-freecode) :void
   (fp :pointer))                      ; bpf_program *
@@ -316,7 +316,7 @@
 
 (defcfun ("pcap_strerror" %pcap-strerror) :string
   (error :int))
-  
+
 (defcfun ("pcap_lib_version" %pcap-lib-version) :string)
 
 (defcfun ("pcap_close" %pcap-close) :void

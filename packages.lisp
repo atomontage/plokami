@@ -29,7 +29,7 @@
 (defpackage :plokami
   (:use :cl :cffi)
   (:export :*pcap-version*             ; [dynamic-var] library version string
-           :make-pcap-live             ; [function:constructor] 
+           :make-pcap-live             ; [function:constructor]
            :make-pcap-reader           ; [function:constructor]
            :make-pcap-writer           ; [function:constructor]
            :pcap-live-interface        ; [reader]

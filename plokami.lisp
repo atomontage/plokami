@@ -43,7 +43,7 @@
 ;;;; How to use:
 ;;;;
 ;;;; 1) Invoke constructors: make-pcap-live, make-pcap-reader, make-pcap-writer
-;;;;    
+;;;;
 ;;;; 2) Invoke methods specialized on these three classes mainly
 ;;;;    capture, dump, set-nonblock, set-filter, stats
 ;;;;
@@ -74,7 +74,7 @@
 ;;;;                             "Captured packet, size: ~A original: ~A~%"
 ;;;;                             caplen len))))))
 
-  
+
 
 (in-package :plokami)
 
@@ -95,7 +95,7 @@
   (progn (warn "Locking not done on this lisp implementation.") nil)
   )
 
-  
+
 ;;; ------------------------------
 ;;; Internal Functions
 
@@ -132,7 +132,7 @@ values."
       (values tv_sec tv_usec))))
 
 ;;; This is passed to the foreign side and when called, invokes the lisp
-;;; packet handler that the user defined (slot /handler/ in pcap-process-mixin) 
+;;; packet handler that the user defined (slot /handler/ in pcap-process-mixin)
 (defcallback pcap-handler :void
     ((user :pointer) (pkthdr :pointer)
      (bytes :pointer))
@@ -153,7 +153,7 @@ values."
           (funcall handler tv_sec tv_usec
                    caplen len buffer))))))
 
-    
+
 ;;; ------------------------------
 ;;; Classes
 
@@ -190,7 +190,7 @@ values."
     :documentation "Foreign pointer to hashkey, passed in callback."))
   (:documentation
    "Internal class, mixed in packet processing (PCAP-LIVE, PCAP-READER)."))
-  
+
 
 (defclass pcap-live (pcap-process-mixin pcap-mixin)
   ((interface
@@ -222,7 +222,7 @@ values."
    (snaplen :initarg :snaplen :reader pcap-live-snaplen))
   (:documentation
    "Class for live packet capture."))
-   
+
 
 (defclass pcap-reader (pcap-process-mixin pcap-mixin)
   ((file
@@ -279,7 +279,7 @@ SNAPLEN should contain the number of bytes captured per packet. Default
 is 68 which should be enough for headers."
   (make-instance 'pcap-live :if interface  :promisc promisc :nbio nbio
                  :timeout timeout :snaplen snaplen))
-  
+
 
 (defun make-pcap-reader (file &key (snaplen 68))
   "Create and return a PCAP-READER instance. FILE is the filename to open and
@@ -410,7 +410,7 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
       (%pcap-dump-flush dumper)
       (%pcap-dump-close dumper))))
 
-      
+
 
 ;; Signals network-interface-error
 (defmethod initialize-instance :after ((cap pcap-live) &key)
@@ -520,7 +520,7 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
           (error 'capture-file-error :text errtext)))
       (setf dumper res
             live t))))
-      
+
 
 ;; Signals packet-capture-error
 (defmethod capture ((cap pcap-live) packets phandler)
@@ -544,11 +544,11 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
       (when (= -1 res)
         (error 'capture-file-error :text (%pcap-geterr pcap_t)))
       res)))
-      
-               
+
+
 ;; Signals block-mode-error
 (defmethod set-nonblock ((cap pcap-live) block-mode)
-  (restart-case      
+  (restart-case
       (with-slots (pcap_t non-block descriptor) cap
         (with-error-buffer (eb)
           (when (= -1 (%pcap-setnonblock pcap_t block-mode eb))
@@ -561,8 +561,8 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
           (setf non-block block-mode
                 descriptor fd)))
     (continue-block-mode () (warn "Error setting non-blocking mode."))))
-  
-  
+
+
 
 ;; Signals network-interface-error
 (defmethod stats ((cap pcap-live))
@@ -578,7 +578,7 @@ to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
 
 ;; Signals packet-filter-error
 (defmethod set-filter ((cap pcap-live) filter)
-  (restart-case 
+  (restart-case
       (with-slots (pcap_t interface) cap
         (with-error-buffer (eb)
           (with-foreign-objects ((netp :uint32)
@@ -701,7 +701,7 @@ list mirrors layout explained in pcap_findalldevs(3)."
         (loop with ifhead = (mem-ref devp :pointer)
            and lis = ()
            and addrlist = ()
-           with ifnext = ifhead 
+           with ifnext = ifhead
            while (not (null-pointer-p ifnext)) do
            (with-foreign-slots ((next name description addresses flags) ifnext
                                 pcap_if_t)
@@ -713,7 +713,7 @@ list mirrors layout explained in pcap_findalldevs(3)."
                                (let ((g1val (gensym))
                                      (g2tag (gensym))
                                      (g3res (gensym)))
-                                 `(loop for (,g1val ,g2tag) in ,list do      
+                                 `(loop for (,g1val ,g2tag) in ,list do
                                        (let ((,g3res (process-sockaddr
                                                       ,g1val ,g2tag)))
                                          (when ,g3res
