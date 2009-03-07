@@ -622,7 +622,7 @@ skipping the filter setup.
 <p><br>[Macro]<br><a class=none name='with-pcap-reader'><b>with-pcap-reader</b> <i>(reader file <tt>&amp;rest</tt> options) declaration* statement*</i> =&gt; <i>result</i></a>
 <blockquote><br>
 
-Call <a href="#make-pcap-reader"><code>MAKE-PCAP-READER</code></a> passing FILE, options and store the resulting
+Call <a href="#make-pcap-reader"><code>MAKE-PCAP-READER</code></a> passing FILE, OPTIONS and store the resulting
 instance in READER. Forms in body are wrapped in an UNWIND-PROTECT form that
 takes care of deallocating resources on error. A restart is also automatically
 invoked when <a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a> is signalled, skipping the filter setup.
