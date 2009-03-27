@@ -133,15 +133,15 @@
   (foreign-alloc :char :count +error-buffer-size+ :initial-element 0))
 
 (defun clear-error-buffer (foreign-buffer)
-  "Set FOREIGN-BUFFER to the empty string."
+  "Set `FOREIGN-BUFFER' to the empty string."
   (setf (mem-aref foreign-buffer :char) 0))
 
 (defun error-buffer-to-lisp (foreign-buffer)
-  "Return FOREIGN-BUFFER as a lisp string."
+  "Return `FOREIGN-BUFFER' as a lisp string."
   (foreign-string-to-lisp foreign-buffer))
 
 (defun free-error-buffer (foreign-buffer)
-  "Free memory held by FOREIGN-BUFFER."
+  "Free memory held by `FOREIGN-BUFFER'."
   (foreign-free foreign-buffer))
 
 (defmacro with-error-buffer ((error-buffer) &body body)
@@ -151,7 +151,7 @@
        (free-error-buffer ,error-buffer))))
 
 (defun get-time-of-day ()
-  "Return nil if gettimeofday fails else seconds, microseconds as multiple
+  "Return `nil' if gettimeofday fails else seconds, microseconds as multiple
 values."
   (with-foreign-object (tv 'timeval)
     (when (= -1 (%gettimeofday tv (null-pointer)))
@@ -296,31 +296,31 @@ values."
 ;;; Constructors
 
 (defun make-pcap-live (interface &key promisc nbio (timeout 100) (snaplen 68))
-  "Create and return a PCAP-LIVE instance. INTERFACE is a string that names
-the network interface used for capture. PROMISC should be T when capturing
-in promiscuous mode, NIL otherwise. NBIO should be T when non-blocking
-operation is required. NIL otherwise (default). TIMEOUT should hold read
+  "Create and return a `PCAP-LIVE' instance. `INTERFACE' is a string that names
+the network interface used for capture. `PROMISC' should be T when capturing
+in promiscuous mode, `NIL' otherwise. `NBIO' should be T when non-blocking
+operation is required. `NIL' otherwise (default). `TIMEOUT' should hold read
 timeout in milliseconds. 0 will wait forever. Only used when in blocking mode
 and only in platforms that support it. No guarantee of actually returning
-within TIMEOUT is made. Use non-blocking mode if that is not adequate.
-SNAPLEN should contain the number of bytes captured per packet. Default
+within `TIMEOUT' is made. Use non-blocking mode if that is not adequate.
+`SNAPLEN' should contain the number of bytes captured per packet. Default
 is 68 which should be enough for headers."
   (make-instance 'pcap-live :if interface  :promisc promisc :nbio nbio
                  :timeout timeout :snaplen snaplen))
 
 
 (defun make-pcap-reader (file &key (snaplen 68))
-  "Create and return a PCAP-READER instance. FILE is the filename to open and
-read packets from. SNAPLEN should contain the number of bytes read per packet
+  "Create and return a `PCAP-READER' instance. `FILE' is the filename to open and
+read packets from. `SNAPLEN' should contain the number of bytes read per packet
 captured. Default is 68 which should be enough for headers."
   (make-instance 'pcap-reader :file file :snaplen snaplen))
 
 
 (defun make-pcap-writer (file &key (datalink "EN10MB") (snaplen 68))
-  "Create and return a PCAP-WRITER instance. FILE is the filename to open and
-dump packets to. DATALINK should contain a string that represents the datalink
+  "Create and return a `PCAP-WRITER' instance. `FILE' is the filename to open and
+dump packets to. `DATALINK' should contain a string that represents the datalink
 protocol of the network interface used to capture the packets. Default is
-Ethernet. SNAPLEN should contain the number of bytes read per packet captured
+Ethernet. `SNAPLEN' should contain the number of bytes read per packet captured
 and should be the same as the one used when capturing/reading packets."
   (make-instance 'pcap-writer :file file :datalink datalink :snaplen snaplen))
 
@@ -365,58 +365,58 @@ be established."))
 
 (defgeneric stop (pcap-mixin)
   (:method-combination progn)
-  (:documentation "Deallocate resources for PCAP-LIVE, PCAP-READER, PCAP-WRITER
+  (:documentation "Deallocate resources for `PCAP-LIVE', `PCAP-READER', `PCAP-WRITER'
 instance."))
 
 (defgeneric capture (pcap-process-mixin packets handler)
-  (:documentation "Only works for PCAP-LIVE or PCAP-READER instances.
-Capture and process maximum number of PACKETS. Minimum is
+  (:documentation "Only works for `PCAP-LIVE' or `PCAP-READER' instances.
+Capture and process maximum number of `PACKETS'. Minimum is
 zero. Return 0 when no packets available (for dumpfiles: when end of file)
 otherwise return number of packets processed which can be
-fewer than the maximum given in PACKETS (due to pcap buffer). A count of
--1 in PACKETS processes all the packets received so far when live capturing,
+fewer than the maximum given in `PACKETS' (due to pcap buffer). A count of
+-1 in `PACKETS' processes all the packets received so far when live capturing,
 or all the packets in a file when reading a pcap dumpfile.
 Handler must be a user defined function that accepts five arguments and will
-get called once for every packet received. The arguments are SEC, USEC, CAPLEN,
-LEN and BUFFER. SEC and USEC correspond to seconds/microseconds since the UNIX
-epoch (timeval structure in C) at the time of capture. CAPLEN corresponds
-to the number of bytes captured. LEN corresponds to the number of bytes
+get called once for every packet received. The arguments are `SEC', `USEC', `CAPLEN',
+`LEN' and `BUFFER'. `SEC' and `USEC' correspond to seconds/microseconds since the UNIX
+epoch (timeval structure in C) at the time of capture. `CAPLEN' corresponds
+to the number of bytes captured. `LEN' corresponds to the number of bytes
 originally present in the packet but not necessarilly captured.
-BUFFER is a statically allocated byte vector with the contents of
+`BUFFER' is a statically allocated byte vector with the contents of
 the captured packet. This means that successive calls of the packet handler
 will overwrite its contents and if packet persistence is required, contents of
-BUFFER should be copied somewhere else from within HANDLER. If an error occurs,
-PACKET-CAPTURE-ERROR is signalled for live interfaces and CAPTURE-FILE-ERROR
+`BUFFER' should be copied somewhere else from within `HANDLER'. If an error occurs,
+`PACKET-CAPTURE-ERROR' is signalled for live interfaces and `CAPTURE-FILE-ERROR'
 for pcap dumpfiles. For more details on callback handling, see CFFI callback
-PCAP-HANDLER."))
+`PCAP-HANDLER'."))
 
 (defgeneric set-nonblock (pcap-live block-mode)
-  (:documentation "Set non-blocking mode if BLOCK-MODE is T, blocking
-mode if NIL. BLOCK-MODE-ERROR is signalled on failure and a restart,
-CONTINUE-BLOCK-MODE is setup, that can be invoked to continue."))
+  (:documentation "Set non-blocking mode if `BLOCK-MODE' is `T', blocking
+mode if `NIL'. `BLOCK-MODE-ERROR' is signalled on failure and a restart,
+`CONTINUE-BLOCK-MODE' is setup, that can be invoked to continue."))
 
 (defgeneric stats (pcap-live)
   (:documentation "Return packet capture statistics from the start of the run
 to the time of the call for live interface capture only. Statistics are
 returned as multiple values and correspond to packets received,
 packets dropped and packets dropped by interface (in this order).
-NETWORK-INTERFACE-ERROR is signalled on failure."))
+`NETWORK-INTERFACE-ERROR' is signalled on failure."))
 
 (defgeneric set-filter (pcap-process-mixin string)
-  (:documentation "Set a packet filter on a PCAP-LIVE or PCAP-READER instance.
-The filter should be given as a BPF expression in STRING. PACKET-FILTER-ERROR
-is signalled on failure. Also, a restart CONTINUE-NO-FILTER is setup that
+  (:documentation "Set a packet filter on a `PCAP-LIVE' or `PCAP-READER' instance.
+The filter should be given as a BPF expression in `STRING'. `PACKET-FILTER-ERROR'
+is signalled on failure. Also, a restart `CONTINUE-NO-FILTER' is setup that
 can be invoked to continue."))
 
 
 (defgeneric dump (pcap-writer data &key length origlength sec usec)
-  (:documentation "Dump a byte vector DATA on PCAP-WRITER instance (which
-corresponds to a pcap savefile). LENGTH corresponds to the number of bytes
-captured and is set to the size of DATA when omitted. ORIGLENGTH corresponds
+  (:documentation "Dump a byte vector `DATA' on `PCAP-WRITER' instance (which
+corresponds to a pcap savefile). `LENGTH' corresponds to the number of bytes
+captured and is set to the size of `DATA' when omitted. `ORIGLENGTH' corresponds
 to the number of bytes originally present in the packet and is set to
-LENGTH when omitted. SEC and USEC correspond to seconds/microseconds since the
+`LENGTH' when omitted. `SEC' and `USEC' correspond to seconds/microseconds since the
 UNIX epoch at the time of packet capture (timeval structure in C) and are set
-to current values when omitted. CAPTURE-FILE-ERROR is signalled on errors."))
+to current values when omitted. `CAPTURE-FILE-ERROR' is signalled on errors."))
 
 
 (defmethod stop progn ((cap pcap-mixin))
@@ -786,11 +786,11 @@ list mirrors layout explained in pcap_findalldevs(3)."
 
 
 (defmacro with-pcap-interface ((pcaplive iface &rest options) &body body)
-  "Call MAKE-PCAP-LIVE passing IFACE, OPTIONS and store
-the resulting instance in PCAPLIVE. Forms in BODY are wrapped in an
-UNWIND-PROTECT form that takes care of deallocating resources on
+  "Call `MAKE-PCAP-LIVE' passing `IFACE', `OPTIONS' and store
+the resulting instance in `PCAPLIVE'. Forms in `BODY' are wrapped in an
+`UNWIND-PROTECT' form that takes care of deallocating resources on
 error and also returns packet capture statistics when possible. A restart
-is also automatically invoked when PACKET-FILTER-ERROR is signalled,
+is also automatically invoked when `PACKET-FILTER-ERROR' is signalled,
 skipping the filter setup."
   `(let ((,pcaplive (make-pcap-live ,iface ,@options)))
      (unwind-protect
@@ -807,10 +807,10 @@ skipping the filter setup."
 
 
 (defmacro with-pcap-reader ((reader file &rest options) &body body)
-  "Call MAKE-PCAP-READER passing FILE, options and store the resulting
-instance in READER. Forms in body are wrapped in an UNWIND-PROTECT form that
+  "Call `MAKE-PCAP-READER' passing `FILE', `OPTIONS' and store the resulting
+instance in `READER`. Forms in body are wrapped in an `UNWIND-PROTECT' form that
 takes care of deallocating resources on error. A restart is also automatically
-invoked when PACKET-FILTER-ERROR is signalled, skipping the filter setup."
+invoked when `PACKET-FILTER-ERROR' is signalled, skipping the filter setup."
   `(let ((,reader (make-pcap-reader ,file ,@options)))
      (unwind-protect
           (handler-bind ((packet-filter-error
@@ -822,9 +822,9 @@ invoked when PACKET-FILTER-ERROR is signalled, skipping the filter setup."
 
 
 (defmacro with-pcap-writer ((writer file &rest options) &body body)
-  "Call MAKE-PCAP-WRITER passing FILE, OPTIONS and store
-the resulting instance in WRITER. Forms in body are wrapped in an
-UNWIND-PROTECT form that takes care of deallocating resources on error."
+  "Call `MAKE-PCAP-WRITER' passing `FILE', `OPTIONS' and store
+the resulting instance in `WRITER'. Forms in body are wrapped in an
+`UNWIND-PROTECT' form that takes care of deallocating resources on error."
   `(let ((,writer (make-pcap-writer ,file ,@options)))
      (unwind-protect
           (progn ,@body)
