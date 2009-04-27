@@ -310,18 +310,19 @@ is 68 which should be enough for headers."
 
 
 (defun make-pcap-reader (file &key (snaplen 68))
-  "Create and return a `PCAP-READER' instance. `FILE' is the filename to open and
-read packets from. `SNAPLEN' should contain the number of bytes read per packet
-captured. Default is 68 which should be enough for headers."
+  "Create and return a `PCAP-READER' instance. `FILE' is the filename to
+open and read packets from. `SNAPLEN' should contain the number of bytes read
+per packet captured. Default is 68 which should be enough for headers."
   (make-instance 'pcap-reader :file file :snaplen snaplen))
 
 
 (defun make-pcap-writer (file &key (datalink "EN10MB") (snaplen 68))
-  "Create and return a `PCAP-WRITER' instance. `FILE' is the filename to open and
-dump packets to. `DATALINK' should contain a string that represents the datalink
-protocol of the network interface used to capture the packets. Default is
-Ethernet. `SNAPLEN' should contain the number of bytes read per packet captured
-and should be the same as the one used when capturing/reading packets."
+  "Create and return a `PCAP-WRITER' instance. `FILE' is the filename to
+open and dump packets to. `DATALINK' should contain a string that represents
+the datalink protocol of the network interface used to capture the packets.
+Default is Ethernet. `SNAPLEN' should contain the number of bytes read per
+packet captured and should be the same as the one used when capturing/reading
+packets."
   (make-instance 'pcap-writer :file file :datalink datalink :snaplen snaplen))
 
 ;;; ------------------------------
@@ -365,8 +366,8 @@ be established."))
 
 (defgeneric stop (pcap-mixin)
   (:method-combination progn)
-  (:documentation "Deallocate resources for `PCAP-LIVE', `PCAP-READER', `PCAP-WRITER'
-instance."))
+  (:documentation "Deallocate resources for `PCAP-LIVE', `PCAP-READER',
+`PCAP-WRITER' instance."))
 
 (defgeneric capture (pcap-process-mixin packets handler)
   (:documentation "Only works for `PCAP-LIVE' or `PCAP-READER' instances.
@@ -377,18 +378,18 @@ fewer than the maximum given in `PACKETS' (due to pcap buffer). A count of
 -1 in `PACKETS' processes all the packets received so far when live capturing,
 or all the packets in a file when reading a pcap dumpfile.
 Handler must be a user defined function that accepts five arguments and will
-get called once for every packet received. The arguments are `SEC', `USEC', `CAPLEN',
-`LEN' and `BUFFER'. `SEC' and `USEC' correspond to seconds/microseconds since the UNIX
-epoch (timeval structure in C) at the time of capture. `CAPLEN' corresponds
-to the number of bytes captured. `LEN' corresponds to the number of bytes
-originally present in the packet but not necessarilly captured.
-`BUFFER' is a statically allocated byte vector with the contents of
-the captured packet. This means that successive calls of the packet handler
-will overwrite its contents and if packet persistence is required, contents of
-`BUFFER' should be copied somewhere else from within `HANDLER'. If an error occurs,
-`PACKET-CAPTURE-ERROR' is signalled for live interfaces and `CAPTURE-FILE-ERROR'
-for pcap dumpfiles. For more details on callback handling, see CFFI callback
-`PCAP-HANDLER'."))
+get called once for every packet received. The arguments are `SEC', `USEC',
+`CAPLEN', `LEN' and `BUFFER'. `SEC' and `USEC' correspond to
+seconds/microseconds since the UNIX epoch (timeval structure in C) at the time
+of capture. `CAPLEN' corresponds to the number of bytes captured. `LEN'
+corresponds to the number of bytes originally present in the packet but not
+necessarilly captured. `BUFFER' is a statically allocated byte vector with the
+contents of the captured packet. This means that successive calls of the
+packet handler will overwrite its contents and if packet persistence is
+required, contents of `BUFFER' should be copied somewhere else from within
+`HANDLER'. If an error occurs, `PACKET-CAPTURE-ERROR' is signalled for live
+interfaces and `CAPTURE-FILE-ERROR' for pcap dumpfiles. For more details
+on callback handling, see CFFI callback `PCAP-HANDLER'."))
 
 (defgeneric set-nonblock (pcap-live block-mode)
   (:documentation "Set non-blocking mode if `BLOCK-MODE' is `T', blocking
@@ -403,10 +404,10 @@ packets dropped and packets dropped by interface (in this order).
 `NETWORK-INTERFACE-ERROR' is signalled on failure."))
 
 (defgeneric set-filter (pcap-process-mixin string)
-  (:documentation "Set a packet filter on a `PCAP-LIVE' or `PCAP-READER' instance.
-The filter should be given as a BPF expression in `STRING'. `PACKET-FILTER-ERROR'
-is signalled on failure. Also, a restart `CONTINUE-NO-FILTER' is setup that
-can be invoked to continue."))
+  (:documentation "Set a packet filter on a `PCAP-LIVE' or `PCAP-READER'
+instance. The filter should be given as a BPF expression in `STRING'.
+`PACKET-FILTER-ERROR' is signalled on failure. Also, a restart
+`CONTINUE-NO-FILTER' is setup that can be invoked to continue."))
 
 
 (defgeneric dump (pcap-writer data &key length origlength sec usec)
@@ -414,9 +415,10 @@ can be invoked to continue."))
 corresponds to a pcap savefile). `LENGTH' corresponds to the number of bytes
 captured and is set to the size of `DATA' when omitted. `ORIGLENGTH' corresponds
 to the number of bytes originally present in the packet and is set to
-`LENGTH' when omitted. `SEC' and `USEC' correspond to seconds/microseconds since the
-UNIX epoch at the time of packet capture (timeval structure in C) and are set
-to current values when omitted. `CAPTURE-FILE-ERROR' is signalled on errors."))
+`LENGTH' when omitted. `SEC' and `USEC' correspond to seconds/microseconds
+since the UNIX epoch at the time of packet capture (timeval structure in C)
+and are set to current values when omitted. `CAPTURE-FILE-ERROR' is
+signalled on errors."))
 
 
 (defmethod stop progn ((cap pcap-mixin))
@@ -808,7 +810,7 @@ skipping the filter setup."
 
 (defmacro with-pcap-reader ((reader file &rest options) &body body)
   "Call `MAKE-PCAP-READER' passing `FILE', `OPTIONS' and store the resulting
-instance in `READER`. Forms in body are wrapped in an `UNWIND-PROTECT' form that
+instance in `READER'. Forms in body are wrapped in an `UNWIND-PROTECT' form that
 takes care of deallocating resources on error. A restart is also automatically
 invoked when `PACKET-FILTER-ERROR' is signalled, skipping the filter setup."
   `(let ((,reader (make-pcap-reader ,file ,@options)))
