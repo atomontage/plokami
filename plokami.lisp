@@ -412,7 +412,7 @@ packets dropped and packets dropped by interface (in this order).
 
 (defgeneric inject (pcap-live buffer &key length)
   (:documentation "Inject `LENGTH' bytes of packet data (size of `BUFFER'
-if ommitted). `INJECT-PACKET-ERROR' is signalled on failure."))
+if ommitted). `PACKET-INJECT-ERROR' is signalled on failure."))
 
 
 (defgeneric set-filter (pcap-process-mixin string)
