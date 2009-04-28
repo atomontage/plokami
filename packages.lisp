@@ -54,7 +54,7 @@
            :packet-filter-error        ; [condition]
            :capture-file-error         ; [condition]
            :packet-capture-error       ; [condition]
-           :inject-packet-error        ; [condition]
+           :packet-inject-error        ; [condition]
            :block-mode-error           ; [condition]
            :stop                       ; [generic function]
            :capture                    ; [generic function]

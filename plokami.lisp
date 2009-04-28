@@ -171,8 +171,8 @@ values."
         (with-slots (buffer handler) pcap
           ;; Copy packet data from C to lisp
           #+:sbcl
-          (let ((dst (sb-sys:vector-sap buffer)))
-            (%memcpy dst bytes caplen))
+          (sb-sys:with-pinned-objects (buffer)
+            (%memcpy (sb-sys:vector-sap buffer) bytes caplen))
           #-:sbcl
           (loop for i from 0 to (- caplen 1) do
                (setf (aref buffer i)
@@ -354,7 +354,7 @@ be established."))
   (:documentation "Signaled on error during live packet capture."))
 
 
-(define-condition inject-packet-error (error)
+(define-condition packet-inject-error (error)
   ((text :initarg :text :reader text))
   (:report (lambda (condition stream)
              (format stream "~A" (text condition))))
@@ -624,12 +624,23 @@ signalled on errors."))
               (foreign-slot-value stat 'pcap_stat 'ps_drop)
               (foreign-slot-value stat 'pcap_stat 'ps_ifdrop)))))
 
-;; Signals inject-packet-error
-(defmethod inject ((cap pcap-live) buffer &key length)
-  (assert (and (not (null buffer))
-               (vectorp buffer)))
 
-  )
+;; Signals packet-inject-error
+(defmethod inject ((cap pcap-live) buffer &key length)
+  (assert (and (not (null buffer))))
+  (when (null length)
+    (setf length (length buffer)))
+  (with-slots (pcap_t) cap
+    (let ((res -1))
+      (loop with foreign-buffer = (foreign-alloc :uint8 :count length)
+         for i from 0 below length do
+           (setf (mem-aref foreign-buffer :uint8 i) (aref buffer i))
+         finally (setf res (%pcap-inject pcap_t foreign-buffer length))
+           (foreign-free foreign-buffer))
+      (when (= -1 res)
+        (error 'packet-inject-error :text (%pcap-geterr pcap_t)))
+      res)))
+
 
 ;; Signals packet-filter-error
 (defmethod set-filter ((cap pcap-live) filter)
@@ -687,6 +698,8 @@ signalled on errors."))
 ;; Signals capture-file-error
 (defmethod dump ((writer pcap-writer) buffer
                  &key length origlength sec usec)
+  (assert (and (not (null buffer))
+               (vectorp buffer)))
   (with-slots (dumper live) writer
     (when live
       (when (null length)
@@ -708,7 +721,8 @@ signalled on errors."))
                   tv_sec sec
                   tv_usec usec)))
         #+:sbcl
-        (%pcap-dump dumper header (sb-sys:vector-sap buffer))
+        (sb-sys:with-pinned-objects (buffer)
+          (%pcap-dump dumper header (sb-sys:vector-sap buffer)))
         #-:sbcl
         (loop
            with foreign-buffer = (foreign-alloc :uint8 :count length)
