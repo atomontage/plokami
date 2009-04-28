@@ -354,6 +354,13 @@ be established."))
   (:documentation "Signaled on error during live packet capture."))
 
 
+(define-condition inject-packet-error (error)
+  ((text :initarg :text :reader text))
+  (:report (lambda (condition stream)
+             (format stream "~A" (text condition))))
+  (:documentation "Signalled on errors during packet injection."))
+
+
 (define-condition block-mode-error (error)
   ((text :initarg :text :reader text))
   (:report (lambda (condition stream)
@@ -402,6 +409,11 @@ to the time of the call for live interface capture only. Statistics are
 returned as multiple values and correspond to packets received,
 packets dropped and packets dropped by interface (in this order).
 `NETWORK-INTERFACE-ERROR' is signalled on failure."))
+
+(defgeneric inject (pcap-live buffer &key length)
+  (:documentation "Inject `LENGTH' bytes of packet data (size of `BUFFER'
+if ommitted). `INJECT-PACKET-ERROR' is signalled on failure."))
+
 
 (defgeneric set-filter (pcap-process-mixin string)
   (:documentation "Set a packet filter on a `PCAP-LIVE' or `PCAP-READER'
@@ -612,6 +624,12 @@ signalled on errors."))
               (foreign-slot-value stat 'pcap_stat 'ps_drop)
               (foreign-slot-value stat 'pcap_stat 'ps_ifdrop)))))
 
+;; Signals inject-packet-error
+(defmethod inject ((cap pcap-live) buffer &key length)
+  (assert (and (not (null buffer))
+               (vectorp buffer)))
+
+  )
 
 ;; Signals packet-filter-error
 (defmethod set-filter ((cap pcap-live) filter)
