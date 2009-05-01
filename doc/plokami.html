@@ -54,7 +54,7 @@ by <a href="#pcap-live-descriptor"><code>pcap-live-descriptor</code></a>)
 depend on support from operating system/libpcap. If things involving these
 operations do not work as they should, consult libpcap documentation
 and platform specific notes.
-<br>The file descriptor
+<br><br>The file descriptor
 can not be used with <strong>kqueue</strong> on OSX (known OSX issue)
 although the same file descriptor works fine with <strong>select</strong>.
 Recent FreeBSD versions have fixed this and <strong>kqueue</strong> works
@@ -440,7 +440,7 @@ T if savefile uses different byte order from host system.
 <p><br>[Method]<br><a class=none name='pcap-writer-alive'><b>pcap-writer-alive</b> <i>(object pcap-writer)</i> =&gt; <i>result</i></a>
 <blockquote><br>
 
-Returns T when PCAP-WRITER object is live and can be used for <a href="#capture"><code>capture</code></a>.
+Returns T when PCAP-WRITER object is live and can be used for packet dumping.
 NIL when <a href="#stop"><code>stop</code></a> has been invoked and object is
 <i>dead</i>.
 
@@ -499,7 +499,7 @@ Number of bytes to write per packet processed.
 <blockquote><br>
 
 Set a packet filter on a PCAP-LIVE or PCAP-READER instance.
-The filter should be given as a BPF expression in STRING. <a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a>
+The filter must be given as a BPF expression in STRING. <a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a>
 is signalled on failure. A restart, CONTINUE-NO-FILTER,
 is also setup that can be invoked to continue without the filter setup.
 
