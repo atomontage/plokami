@@ -30,7 +30,7 @@
 ;;;; Lispy interface to libpcap
 ;;;;
 ;;;;
-;;;; DONE: BPF, dumpfile input, dumpfile output, live capture, nbio.
+;;;; DONE: BPF, inject, dumpfile input, dumpfile output, live capture, nbio.
 ;;;; TODO-ClozureCL: Optimize buffer copying.
 ;;;;
 ;;;; When using multiple pcap instances to capture packets at the same time
@@ -52,7 +52,9 @@
 ;;;;
 ;;;; The best way to make sure that capture does not wait forever, is to use
 ;;;; non-blocking mode in combination with your own event notification scheme
-;;;; (select/epoll/kqueue etc)
+;;;; (select/epoll/kqueue etc). This is also the preferred way to capture
+;;;; packets from multiple pcap instances, threads should be considered as
+;;;; a last resort.
 ;;;;
 ;;;; How to use:
 ;;;;
@@ -111,7 +113,8 @@
   #+sb-thread (sb-thread:make-mutex :name "*concurrent-pcap* lock")
   #+openmcl-native-threads (ccl:make-lock)
   #-(or :sb-thread :openmcl-native-threads)
-  (progn (warn "Locking not done on this lisp implementation.") nil)
+  (progn (warn "Locking not done on this implementation. Avoid threads.")
+         nil)
   )
 
 ;; Mutex for pcap_compile which is not thread safe
@@ -119,7 +122,7 @@
   #+sb-thread (sb-thread:make-mutex :name "*compile-mutex* lock")
   #+openmcl-native-threads (ccl:make-lock)
   #-(or :sb-thread :openmcl-native-threads)
-  (progn (warn "Locking for set-filter not done on this lisp implementation.")
+  (progn (warn "Locking not done on this implementation. Avoid threads.")
          nil)
   )
 
@@ -572,7 +575,7 @@ signalled on errors."))
 
 
 ;; Signals packet-capture-error
-(defmethod capture ((cap pcap-live) packets phandler)
+(defmethod capture ((cap pcap-live) (packets integer) (phandler function))
   (with-slots (pcap_t hashkey handler hashkey-pointer) cap
       (setf handler phandler)
       ;; %pcap-loop and %pcap-next do not work in non-blocking mode
@@ -585,7 +588,7 @@ signalled on errors."))
 
 
 ;; Signals capture-file-error
-(defmethod capture ((cap pcap-reader) packets phandler)
+(defmethod capture ((cap pcap-reader) (packets integer) (phandler function))
   (with-slots (pcap_t hashkey handler hashkey-pointer) cap
     (setf handler phandler)
     (let ((res (%pcap-dispatch pcap_t packets (callback pcap-handler)
@@ -626,8 +629,7 @@ signalled on errors."))
 
 
 ;; Signals packet-inject-error
-(defmethod inject ((cap pcap-live) buffer &key length)
-  (assert (and (not (null buffer))))
+(defmethod inject ((cap pcap-live) (buffer vector) &key length)
   (when (null length)
     (setf length (length buffer)))
   (with-slots (pcap_t) cap
@@ -643,7 +645,7 @@ signalled on errors."))
 
 
 ;; Signals packet-filter-error
-(defmethod set-filter ((cap pcap-live) filter)
+(defmethod set-filter ((cap pcap-live) (filter string))
   (restart-case
       (with-slots (pcap_t interface) cap
         (with-error-buffer (eb)
@@ -674,7 +676,7 @@ signalled on errors."))
 
 
 ;; Signals packet-filter-error
-(defmethod set-filter ((cap pcap-reader) filter)
+(defmethod set-filter ((cap pcap-reader) (filter string))
   (restart-case
       (with-slots (pcap_t) cap
         (with-foreign-object (fp 'bpf_program)
@@ -696,10 +698,8 @@ signalled on errors."))
 
 
 ;; Signals capture-file-error
-(defmethod dump ((writer pcap-writer) buffer
+(defmethod dump ((writer pcap-writer) (buffer vector)
                  &key length origlength sec usec)
-  (assert (and (not (null buffer))
-               (vectorp buffer)))
   (with-slots (dumper live) writer
     (when live
       (when (null length)
