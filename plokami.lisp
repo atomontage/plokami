@@ -1,4 +1,3 @@
-
 ;;; Copyright (c) 2008 xristos@suspicious.org.  All rights reserved.
 
 ;;; Redistribution and use in source and binary forms, with or without
@@ -39,7 +38,7 @@
 ;;;; implemented only for SBCL and CCL.
 ;;;;
 ;;;; Also, thread safety of libpcap itself is not clearly defined so proceed
-;;;; with caution. Multithreading seems to work fine here apart from
+;;;; with caution. Multithreading seems to work fine with the exception of
 ;;;; pcap_compile which uses global data structures and should only be called
 ;;;; in a synchronized way. This is done in set-filter for SBCL and CCL using
 ;;;; *compile-mutex*.
@@ -154,7 +153,7 @@
        (free-error-buffer ,error-buffer))))
 
 (defun get-time-of-day ()
-  "Return `nil' if gettimeofday fails else seconds, microseconds as multiple
+  "Return `NIL' if gettimeofday fails else seconds, microseconds as multiple
 values."
   (with-foreign-object (tv 'timeval)
     (when (= -1 (%gettimeofday tv (null-pointer)))
@@ -177,7 +176,7 @@ values."
           (sb-sys:with-pinned-objects (buffer)
             (%memcpy (sb-sys:vector-sap buffer) bytes caplen))
           #-:sbcl
-          (loop for i from 0 to (- caplen 1) do
+          (loop :for i :from 0 :to (- caplen 1) :do
                (setf (aref buffer i)
                      (mem-aref bytes :uint8 i)))
           ;; Call lisp packet handler
@@ -242,7 +241,9 @@ values."
     :initarg :timeout
     :reader pcap-live-timeout
     :initform 100
-    :documentation "Read timeout in milliseconds. 0 will wait forever. Only works in blocking mode/platforms that support it. No guarantee of returning within timeout.")
+    :documentation "Read timeout in milliseconds. 0 will wait forever.
+Only works in blocking mode/platforms that support it. No guarantee of
+returning within timeout.")
    (descriptor
     :reader pcap-live-descriptor
     :initform nil
@@ -299,72 +300,83 @@ values."
 ;;; Constructors
 
 (defun make-pcap-live (interface &key promisc nbio (timeout 100) (snaplen 68))
-  "Create and return a `PCAP-LIVE' instance. `INTERFACE' is a string that names
-the network interface used for capture. `PROMISC' should be T when capturing
-in promiscuous mode, `NIL' otherwise. `NBIO' should be T when non-blocking
-operation is required. `NIL' otherwise (default). `TIMEOUT' should hold read
-timeout in milliseconds. 0 will wait forever. Only used when in blocking mode
-and only in platforms that support it. No guarantee of actually returning
-within `TIMEOUT' is made. Use non-blocking mode if that is not adequate.
-`SNAPLEN' should contain the number of bytes captured per packet. Default
-is 68 which should be enough for headers."
+  "Creates and returns a `PCAP-LIVE' instance that is used for live packet
+capture from a network interface.
+
+`INTERFACE' is a string that defines the network interface to use for capture.
+`PROMISC' should be T for promiscuous mode, `NIL' otherwise.
+`NBIO' should be T when non-blocking operation is required. `NIL' otherwise
+(default). `TIMEOUT' should hold read timeout in milliseconds.
+0 will wait forever. Only used when in blocking mode and only in platforms
+that support it. No guarantee of actually returning within `TIMEOUT' is made.
+Use non-blocking mode if that is not adequate. `SNAPLEN' should contain the
+number of bytes captured per packet. Default is 68 which should be enough
+for headers."
   (make-instance 'pcap-live :if interface  :promisc promisc :nbio nbio
                  :timeout timeout :snaplen snaplen))
 
 
 (defun make-pcap-reader (file &key (snaplen 68))
-  "Create and return a `PCAP-READER' instance. `FILE' is the filename to
-open and read packets from. `SNAPLEN' should contain the number of bytes read
-per packet captured. Default is 68 which should be enough for headers."
+  "Creates and returns a `PCAP-READER' instance that is used for reading
+packets from a pcap dumpfile.
+
+`FILE' is the filename to open and read packets from. `SNAPLEN' should contain
+the number of bytes read per packet captured. Default is 68 which should
+be enough for headers."
   (make-instance 'pcap-reader :file file :snaplen snaplen))
 
 
 (defun make-pcap-writer (file &key (datalink "EN10MB") (snaplen 68))
-  "Create and return a `PCAP-WRITER' instance. `FILE' is the filename to
-open and dump packets to. `DATALINK' should contain a string that represents
-the datalink protocol of the network interface used to capture the packets.
-Default is Ethernet. `SNAPLEN' should contain the number of bytes read per
-packet captured and should be the same as the one used when capturing/reading
-packets."
+  "Creates and returns a `PCAP-WRITER' instance that is used to write packets
+to a pcap dumpfile.
+
+`FILE' is the filename to open and write packets to. `DATALINK' should contain
+a string that represents the datalink protocol of the network interface used
+to capture the packets. Default is Ethernet. `SNAPLEN' should contain the
+number of bytes read per packet captured and should be the same as the one
+used when capturing/reading the packets."
   (make-instance 'pcap-writer :file file :datalink datalink :snaplen snaplen))
 
 ;;; ------------------------------
 ;;; Conditions
 
-(define-condition network-interface-error (error)
+(define-condition plokami-error (error) ()
+  (:documentation "Generic condition for this package."))
+
+(define-condition network-interface-error (plokami-error)
   ((text :initarg :text :reader text))
   (:report (lambda (condition stream)
              (format stream "~A" (text condition))))
   (:documentation "Signaled on all network interface errors."))
 
-(define-condition capture-file-error (error)
+(define-condition capture-file-error (plokami-error)
   ((text :initarg :text :reader text))
   (:report (lambda (condition stream)
              (format stream "~A" (text condition))))
   (:documentation "Signaled on all pcap file errors."))
 
-(define-condition packet-filter-error (error)
+(define-condition packet-filter-error (plokami-error)
   ((text :initarg :text :reader text))
   (:report (lambda (condition stream)
              (format stream "~A" (text condition))))
-  (:documentation "Signaled when a berkeley packet filter could not
-be established."))
+  (:documentation "Signaled when a berkeley packet filter could not be
+established."))
 
-(define-condition packet-capture-error (error)
+(define-condition packet-capture-error (plokami-error)
   ((text :initarg :text :reader text))
   (:report (lambda (condition stream)
              (format stream "~A" (text condition))))
   (:documentation "Signaled on error during live packet capture."))
 
 
-(define-condition packet-inject-error (error)
+(define-condition packet-inject-error (plokami-error)
   ((text :initarg :text :reader text))
   (:report (lambda (condition stream)
              (format stream "~A" (text condition))))
-  (:documentation "Signalled on errors during packet injection."))
+  (:documentation "Signaled on errors during packet injection."))
 
 
-(define-condition block-mode-error (error)
+(define-condition block-mode-error (plokami-error)
   ((text :initarg :text :reader text))
   (:report (lambda (condition stream)
              (format stream "~A" (text condition))))
@@ -376,19 +388,21 @@ be established."))
 
 (defgeneric stop (pcap-mixin)
   (:method-combination progn)
-  (:documentation "Deallocate resources for `PCAP-LIVE', `PCAP-READER',
+  (:documentation "Deallocates resources for `PCAP-LIVE', `PCAP-READER',
 `PCAP-WRITER' instance."))
 
 (defgeneric capture (pcap-process-mixin packets handler)
   (:documentation "Only works for `PCAP-LIVE' or `PCAP-READER' instances.
-Capture and process maximum number of `PACKETS'. Minimum is
+Captures and processes maximum number of `PACKETS'. Minimum is
 zero. Return 0 when no packets available (for dumpfiles: when end of file)
 otherwise return number of packets processed which can be
-fewer than the maximum given in `PACKETS' (due to pcap buffer). A count of
--1 in `PACKETS' processes all the packets received so far when live capturing,
-or all the packets in a file when reading a pcap dumpfile.
+fewer than the maximum given in `PACKETS' (due to pcap buffer).
+
+A count of -1 in `PACKETS' processes all the packets received so far when live
+capturing, or all the packets in a file when reading a pcap dumpfile.
+
 Handler must be a user defined function that accepts five arguments and will
-get called once for every packet received. The arguments are `SEC', `USEC',
+get called once for every packet received. The values passed are `SEC', `USEC',
 `CAPLEN', `LEN' and `BUFFER'. `SEC' and `USEC' correspond to
 seconds/microseconds since the UNIX epoch (timeval structure in C) at the time
 of capture. `CAPLEN' corresponds to the number of bytes captured. `LEN'
@@ -397,41 +411,46 @@ necessarilly captured. `BUFFER' is a statically allocated byte vector with the
 contents of the captured packet. This means that successive calls of the
 packet handler will overwrite its contents and if packet persistence is
 required, contents of `BUFFER' should be copied somewhere else from within
-`HANDLER'. If an error occurs, `PACKET-CAPTURE-ERROR' is signalled for live
+`HANDLER'.
+
+If an error occurs, `PACKET-CAPTURE-ERROR' is signalled for live
 interfaces and `CAPTURE-FILE-ERROR' for pcap dumpfiles. For more details
 on callback handling, see CFFI callback `PCAP-HANDLER'."))
 
+
 (defgeneric set-nonblock (pcap-live block-mode)
-  (:documentation "Set non-blocking mode if `BLOCK-MODE' is `T', blocking
+  (:documentation "Sets non-blocking mode if `BLOCK-MODE' is `T', blocking
 mode if `NIL'. `BLOCK-MODE-ERROR' is signalled on failure and a restart,
-`CONTINUE-BLOCK-MODE' is setup, that can be invoked to continue."))
+`CONTINUE-BLOCK-MODE' is installed, that can be invoked to continue."))
 
 (defgeneric stats (pcap-live)
-  (:documentation "Return packet capture statistics from the start of the run
+  (:documentation "Returns packet capture statistics from the start of the run
 to the time of the call for live interface capture only. Statistics are
 returned as multiple values and correspond to packets received,
 packets dropped and packets dropped by interface (in this order).
 `NETWORK-INTERFACE-ERROR' is signalled on failure."))
 
+
 (defgeneric inject (pcap-live buffer &key length)
-  (:documentation "Inject `LENGTH' bytes of packet data (size of `BUFFER'
-if ommitted). `PACKET-INJECT-ERROR' is signalled on failure."))
+  (:documentation "Injects `LENGTH' bytes to a live pcap interface
+(size of `BUFFER' if ommitted). `PACKET-INJECT-ERROR' is signalled on
+failure."))
 
 
 (defgeneric set-filter (pcap-process-mixin string)
-  (:documentation "Set a packet filter on a `PCAP-LIVE' or `PCAP-READER'
+  (:documentation "Sets a packet filter on a `PCAP-LIVE' or `PCAP-READER'
 instance. The filter should be given as a BPF expression in `STRING'.
-`PACKET-FILTER-ERROR' is signalled on failure. Also, a restart
-`CONTINUE-NO-FILTER' is setup that can be invoked to continue."))
+`PACKET-FILTER-ERROR' is signalled on failure. A restart, `CONTINUE-NO-FILTER'
+is installed that can be invoked to continue on error."))
 
 
 (defgeneric dump (pcap-writer data &key length origlength sec usec)
-  (:documentation "Dump a byte vector `DATA' on `PCAP-WRITER' instance (which
-corresponds to a pcap savefile). `LENGTH' corresponds to the number of bytes
-captured and is set to the size of `DATA' when omitted. `ORIGLENGTH' corresponds
-to the number of bytes originally present in the packet and is set to
-`LENGTH' when omitted. `SEC' and `USEC' correspond to seconds/microseconds
-since the UNIX epoch at the time of packet capture (timeval structure in C)
+  (:documentation "Writes contents of byte vector `DATA' to `PCAP-WRITER'
+instance (which corresponds to a pcap dumpfile). `LENGTH' is the number of bytes
+to write and is set to the size of `DATA' when omitted. `ORIGLENGTH' should be
+set to the number of bytes originally present in the packet and is set to
+`LENGTH' when omitted. `SEC' and `USEC' should be set to seconds/microseconds
+since the UNIX epoch at the time of capture (timeval structure in C)
 and are set to current values when omitted. `CAPTURE-FILE-ERROR' is
 signalled on errors."))
 
@@ -634,10 +653,10 @@ signalled on errors."))
     (setf length (length buffer)))
   (with-slots (pcap_t) cap
     (let ((res -1))
-      (loop with foreign-buffer = (foreign-alloc :uint8 :count length)
-         for i from 0 below length do
+      (loop :with foreign-buffer = (foreign-alloc :uint8 :count length)
+         :for i :from 0 :below length :do
            (setf (mem-aref foreign-buffer :uint8 i) (aref buffer i))
-         finally (setf res (%pcap-inject pcap_t foreign-buffer length))
+         :finally (setf res (%pcap-inject pcap_t foreign-buffer length))
            (foreign-free foreign-buffer))
       (when (= -1 res)
         (error 'packet-inject-error :text (%pcap-geterr pcap_t)))
@@ -725,11 +744,11 @@ signalled on errors."))
           (%pcap-dump dumper header (sb-sys:vector-sap buffer)))
         #-:sbcl
         (loop
-           with foreign-buffer = (foreign-alloc :uint8 :count length)
-           for i from 0 to (- length 1) do
+           :with foreign-buffer = (foreign-alloc :uint8 :count length)
+           :for i :from 0 :to (- length 1) :do
            (setf (mem-aref foreign-buffer :uint8 i)
                  (aref buffer i))
-           finally (%pcap-dump dumper header foreign-buffer)
+           :finally (%pcap-dump dumper header foreign-buffer)
            (foreign-free foreign-buffer))))))
 
 
@@ -748,7 +767,7 @@ list mirrors layout explained in pcap_findalldevs(3)."
     (with-foreign-pointer (devp 4)
       (when (= -1 (%pcap-findalldevs devp eb))
         (error 'network-interface-error :text (error-buffer-to-lisp eb)))
-      (labels ((ipv4-extract (data)
+      (labels ((ipv4-extract (data)     ; Extract ipv4 address
                  (let ((ptr (inc-pointer (foreign-slot-pointer data
                                                                'sockaddr
                                                                'sa_data)
@@ -758,7 +777,7 @@ list mirrors layout explained in pcap_findalldevs(3)."
                        (cond
                          ((zerop res) nil)
                          (t (foreign-string-to-lisp str)))))))
-               (ipv6-extract (data)
+               (ipv6-extract (data)     ; Extract ipv6 address
                  (let ((ptr (inc-pointer (foreign-slot-pointer data
                                                                'sockaddr
                                                                'sa_data)
@@ -768,9 +787,9 @@ list mirrors layout explained in pcap_findalldevs(3)."
                        (cond
                          ((zerop res) nil)
                          (t (foreign-string-to-lisp str)))))))
-               (link-extract (data)
+               (link-extract (data)     ; Extract link-layer address
                  (%link-ntoa data))
-               (process-sockaddr (addr tag)
+               (process-sockaddr (addr tag) ; Extract address-specific details
                  (when (null-pointer-p addr)
                    (return-from process-sockaddr nil))
                  (with-foreign-slots ((sa_len sa_family) addr sockaddr)
@@ -787,22 +806,22 @@ list mirrors layout explained in pcap_findalldevs(3)."
                        (t (setf fam :UNSUPPORTED)
                           (setf output :UNSUPPORTED)))
                      (list tag fam output)))))
-        (loop with ifhead = (mem-ref devp :pointer)
-           and lis = ()
-           and addrlist = ()
-           with ifnext = ifhead
-           while (not (null-pointer-p ifnext)) do
+        (loop :with ifhead = (mem-ref devp :pointer)
+           :and lis = ()
+           :and addrlist = ()
+           :with ifnext = ifhead
+           :while (not (null-pointer-p ifnext)) :do
            (with-foreign-slots ((next name description addresses flags) ifnext
                                 pcap_if_t)
-             (loop with addrhead = addresses and newlist = () with
-                addrnext = addrhead while (not (null-pointer-p addrnext)) do
+             (loop :with addrhead = addresses :and newlist = () :with
+                addrnext = addrhead :while (not (null-pointer-p addrnext)) :do
                 (with-foreign-slots ((next addr netmask broadaddr dstaddr)
                                      addrnext pcap_addr_t)
                   (macrolet ((check-push (list finallist)
                                (let ((g1val (gensym))
                                      (g2tag (gensym))
                                      (g3res (gensym)))
-                                 `(loop for (,g1val ,g2tag) in ,list do
+                                 `(loop :for (,g1val ,g2tag) :in ,list :do
                                        (let ((,g3res (process-sockaddr
                                                       ,g1val ,g2tag)))
                                          (when ,g3res
@@ -815,13 +834,13 @@ list mirrors layout explained in pcap_findalldevs(3)."
              (push (list name description flags addrlist) lis)
              (setf addrlist (list))
              (setf ifnext next))
-           finally (%pcap-freealldevs ifhead)
+           :finally (%pcap-freealldevs ifhead)
            (return lis))))))
 
 
 (defmacro with-pcap-interface ((pcaplive iface &rest options) &body body)
-  "Call `MAKE-PCAP-LIVE' passing `IFACE', `OPTIONS' and store
-the resulting instance in `PCAPLIVE'. Forms in `BODY' are wrapped in an
+  "Call `MAKE-PCAP-LIVE' using `IFACE', `OPTIONS' as arguments and store
+the resulting instance in `PCAPLIVE'. Forms in body are wrapped in an
 `UNWIND-PROTECT' form that takes care of deallocating resources on
 error and also returns packet capture statistics when possible. A restart
 is also automatically invoked when `PACKET-FILTER-ERROR' is signalled,
@@ -841,10 +860,11 @@ skipping the filter setup."
 
 
 (defmacro with-pcap-reader ((reader file &rest options) &body body)
-  "Call `MAKE-PCAP-READER' passing `FILE', `OPTIONS' and store the resulting
-instance in `READER'. Forms in body are wrapped in an `UNWIND-PROTECT' form that
-takes care of deallocating resources on error. A restart is also automatically
-invoked when `PACKET-FILTER-ERROR' is signalled, skipping the filter setup."
+  "Call `MAKE-PCAP-READER' using `FILE', `OPTIONS' as arguments and store the
+resulting instance in `READER'. Forms in body are wrapped in an `UNWIND-PROTECT'
+form that takes care of deallocating resources on error. A restart is also
+automatically invoked when `PACKET-FILTER-ERROR' is signalled,
+skipping the filter setup."
   `(let ((,reader (make-pcap-reader ,file ,@options)))
      (unwind-protect
           (handler-bind ((packet-filter-error
@@ -856,7 +876,7 @@ invoked when `PACKET-FILTER-ERROR' is signalled, skipping the filter setup."
 
 
 (defmacro with-pcap-writer ((writer file &rest options) &body body)
-  "Call `MAKE-PCAP-WRITER' passing `FILE', `OPTIONS' and store
+  "Call `MAKE-PCAP-WRITER' using `FILE', `OPTIONS' as arguments and store
 the resulting instance in `WRITER'. Forms in body are wrapped in an
 `UNWIND-PROTECT' form that takes care of deallocating resources on error."
   `(let ((,writer (make-pcap-writer ,file ,@options)))

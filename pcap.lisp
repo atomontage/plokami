@@ -37,6 +37,9 @@
 (defconstant +error-buffer-size+ 256) ; PCAP_ERRBUF_SIZE
 (defconstant +PCAP_IF_LOOPBACK+  1)
 
+
+;; Supported datalink types
+;; TODO: Add more from pcap-bpf.h
 (defconstant +DLT_NULL+ 0)
 (defconstant +DLT_EN10MB+ 1)
 (defconstant +DLT_SLIP+ 8)
@@ -46,8 +49,8 @@
 (defconstant +DLT_PPP_SERIAL+ 50)
 (defconstant +DLT_PPP_ETHER+ 51)
 (defconstant +DLT_PPP_PPPD+ 166)
+(defconstant +DLT_802_11+ 105)
 
-;; Supported datalink types
 (defparameter *supported-datalinks*
   `(("NULL" . ,+DLT_NULL+)
     ("EN10MB" . ,+DLT_EN10MB+)
@@ -57,7 +60,8 @@
     ("PPP-BSDOS" . ,+DLT_PPP_BSDOS2+)
     ("PPP-SERIAL" . ,+DLT_PPP_SERIAL+)
     ("PPP-ETHER" . ,+DLT_PPP_ETHER+)
-    ("PPP-PPPD" . ,+DLT_PPP_PPPD+)))
+    ("PPP-PPPD" . ,+DLT_PPP_PPPD+)
+    ("802.11-WLAN" . ,+DLT_802_11+)))
 
 
 (defparameter *pcap-version* nil
@@ -66,7 +70,7 @@
 
 (define-foreign-library libpcap
   (:win32 (:default "wpcap"))
-  (:unix (:default "libpcap"))) ; Might need fixing with new CFFI
+  (:unix (:default "libpcap"))) 
 
 (use-foreign-library libpcap)
 
