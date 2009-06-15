@@ -101,16 +101,16 @@
 ;;; Globals
 
 (defvar *callbacks*
-  #+sb-thread (make-hash-table :synchronized t)
-  #+openmcl-native-threads (make-hash-table :shared t)
+  #+:sb-thread (make-hash-table :synchronized t)
+  #+:openmcl-native-threads (make-hash-table :shared t)
   #-(or sb-thread openmcl-native-threads) (make-hash-table)
   )
 
 (defvar *concurrentpcap* 1)
 
 (defvar *concurrentpcap-mutex*
-  #+sb-thread (sb-thread:make-mutex :name "*concurrent-pcap* lock")
-  #+openmcl-native-threads (ccl:make-lock)
+  #+:sb-thread (sb-thread:make-mutex :name "*concurrent-pcap* lock")
+  #+:openmcl-native-threads (ccl:make-lock)
   #-(or :sb-thread :openmcl-native-threads)
   (progn (warn "Locking not done on this implementation. Avoid threads.")
          nil)
@@ -118,8 +118,8 @@
 
 ;; Mutex for pcap_compile which is not thread safe
 (defvar *compile-mutex*
-  #+sb-thread (sb-thread:make-mutex :name "*compile-mutex* lock")
-  #+openmcl-native-threads (ccl:make-lock)
+  #+:sb-thread (sb-thread:make-mutex :name "*compile-mutex* lock")
+  #+:openmcl-native-threads (ccl:make-lock)
   #-(or :sb-thread :openmcl-native-threads)
   (progn (warn "Locking not done on this implementation. Avoid threads.")
          nil)
@@ -464,10 +464,10 @@ signalled on errors."))
 (defmethod stop progn ((cap pcap-process-mixin))
   (with-slots (live hashkey hashkey-pointer) cap
     (when live
-      #+sb-thread
+      #+:sb-thread
       (sb-thread:with-mutex (*concurrentpcap-mutex*)
           (remhash hashkey *callbacks*))
-      #+openmcl-native-threads
+      #+:openmcl-native-threads
       (ccl:with-lock-grabbed (*concurrentpcap-mutex*)
         (remhash hashkey *callbacks*))
       #-(or sb-thread openmcl-native-threads)
@@ -516,12 +516,12 @@ signalled on errors."))
                                  '(unsigned-byte 8))
               live t)
         ;; Hash pcap instance for callback discovery
-        #+sb-thread
+        #+:sb-thread
         (sb-thread:with-mutex (*concurrentpcap-mutex*)
           (setf (gethash *concurrentpcap* *callbacks*) cap
                 hashkey *concurrentpcap*)
           (incf *concurrentpcap*))
-        #+openmcl-native-threads
+        #+:openmcl-native-threads
         (ccl:with-lock-grabbed (*concurrentpcap-mutex*)
           (setf (gethash *concurrentpcap* *callbacks*) cap
                 hashkey *concurrentpcap*)
@@ -561,12 +561,12 @@ signalled on errors."))
                 minor (%pcap-minor-version pcap_t)
                 live t)
           ;; Hash pcap instance for callback discovery
-          #+sb-thread
+          #+:sb-thread
           (sb-thread:with-mutex (*concurrentpcap-mutex*)
             (setf (gethash *concurrentpcap* *callbacks*) cap
                   hashkey *concurrentpcap*)
             (incf *concurrentpcap*))
-          #+openmcl-native-threads
+          #+:openmcl-native-threads
           (ccl:with-lock-grabbed (*concurrentpcap-mutex*)
             (setf (gethash *concurrentpcap* *callbacks*) cap
                   hashkey *concurrentpcap*)
@@ -674,11 +674,11 @@ signalled on errors."))
             (when (= -1 (%pcap-lookupnet interface netp maskp eb))
               (error 'packet-filter-error :text (error-buffer-to-lisp eb)))
             (when (= -1
-                     #+sb-thread
+                     #+:sb-thread
                      (sb-thread:with-mutex (*compile-mutex*)
                        (%pcap-compile pcap_t fp filter 1
                                       (mem-aref maskp :uint32)))
-                     #+openmcl-native-threads
+                     #+:openmcl-native-threads
                      (ccl:with-lock-grabbed (*compile-mutex*)
                        (%pcap-compile pcap_t fp filter 1
                                       (mem-aref maskp :uint32)))
@@ -700,10 +700,10 @@ signalled on errors."))
       (with-slots (pcap_t) cap
         (with-foreign-object (fp 'bpf_program)
           (when (= -1
-                   #+sb-thread
+                   #+:sb-thread
                    (sb-thread:with-mutex (*compile-mutex*)
                      (%pcap-compile pcap_t fp filter 1 0))
-                   #+openmcl-native-threads
+                   #+:openmcl-native-threads
                    (ccl:with-lock-grabbed (*compile-mutex*)
                      (%pcap-compile pcap_t fp filter 1 0))
                    #-(or :sb-thread :openmcl-native-threads)
