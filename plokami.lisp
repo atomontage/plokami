@@ -340,46 +340,29 @@ used when capturing/reading the packets."
 ;;; ------------------------------
 ;;; Conditions
 
-(define-condition plokami-error (error) ()
+(define-condition plokami-error (error)
+  ((text :initarg :text :reader text))
+  (:report (lambda (condition stream)
+             (format stream "~A" (text condition))))
   (:documentation "Generic condition for this package."))
 
-(define-condition network-interface-error (plokami-error)
-  ((text :initarg :text :reader text))
-  (:report (lambda (condition stream)
-             (format stream "~A" (text condition))))
+(define-condition network-interface-error (plokami-error) ()
   (:documentation "Signaled on all network interface errors."))
 
-(define-condition capture-file-error (plokami-error)
-  ((text :initarg :text :reader text))
-  (:report (lambda (condition stream)
-             (format stream "~A" (text condition))))
+(define-condition capture-file-error (plokami-error) ()
   (:documentation "Signaled on all pcap file errors."))
 
-(define-condition packet-filter-error (plokami-error)
-  ((text :initarg :text :reader text))
-  (:report (lambda (condition stream)
-             (format stream "~A" (text condition))))
+(define-condition packet-filter-error (plokami-error) ()
   (:documentation "Signaled when a berkeley packet filter could not be
 established."))
 
-(define-condition packet-capture-error (plokami-error)
-  ((text :initarg :text :reader text))
-  (:report (lambda (condition stream)
-             (format stream "~A" (text condition))))
+(define-condition packet-capture-error (plokami-error) ()
   (:documentation "Signaled on error during live packet capture."))
 
-
-(define-condition packet-inject-error (plokami-error)
-  ((text :initarg :text :reader text))
-  (:report (lambda (condition stream)
-             (format stream "~A" (text condition))))
+(define-condition packet-inject-error (plokami-error) ()
   (:documentation "Signaled on errors during packet injection."))
 
-
-(define-condition block-mode-error (plokami-error)
-  ((text :initarg :text :reader text))
-  (:report (lambda (condition stream)
-             (format stream "~A" (text condition))))
+(define-condition block-mode-error (plokami-error) ()
   (:documentation "Signaled on error when changing blocking mode."))
 
 
@@ -758,8 +741,7 @@ signalled on errors."))
 
 
 ;; Signals network-interface-error
-;; Definately not proud of this one, tested on darwin/intel only
-;; Should not blow up if something bad happens...
+;; Definitely not proud of this one
 (defun find-all-devs ()
   "Return a list of all network devices that can be opened for capture. Result
 list mirrors layout explained in pcap_findalldevs(3)."
