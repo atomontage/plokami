@@ -614,7 +614,9 @@ signalled on errors."))
             (warn "Non-blocking mode requested, selectable FD not available."))
           (setf non-block block-mode
                 descriptor fd)))
-    (continue-block-mode () (warn "Error setting non-blocking mode."))))
+    (continue-block-mode ()
+      :report "Continue without setting non-blocking mode."
+      (warn "Error setting non-blocking mode."))))
 
 
 
@@ -673,7 +675,9 @@ signalled on errors."))
             (when (= -1 (%pcap-setfilter pcap_t fp))
               (%pcap-freecode fp)
               (error 'packet-filter-error :text (%pcap-geterr pcap_t))))))
-    (continue-no-filter () (warn "Error setting packet filter."))))
+    (continue-no-filter ()
+      :report "Continue without setting a packet filter."
+      (warn "Error setting packet filter."))))
 
 
 
@@ -696,7 +700,9 @@ signalled on errors."))
           (when (= -1 (%pcap-setfilter pcap_t fp))
             (%pcap-freecode fp)
             (error 'packet-filter-error :text (%pcap-geterr pcap_t)))))
-    (continue-no-filter () (warn "Error setting packet filter."))))
+    (continue-no-filter ()
+      :report "Continue without setting a packet filter."
+      (warn "Error setting packet filter."))))
 
 
 ;; Signals capture-file-error
