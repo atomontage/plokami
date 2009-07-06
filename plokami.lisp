@@ -60,7 +60,7 @@
 ;;;; 1) Invoke constructors: make-pcap-live, make-pcap-reader, make-pcap-writer
 ;;;;
 ;;;; 2) Invoke methods specialized on these three classes mainly
-;;;;    capture, dump, set-nonblock, set-filter, stats
+;;;;    capture, dump, set-non-block, set-filter, stats
 ;;;;
 ;;;; 3) Invoke stop when finished
 ;;;;
@@ -112,7 +112,7 @@
   #+:sb-thread (sb-thread:make-mutex :name "*concurrent-pcap* lock")
   #+:openmcl-native-threads (ccl:make-lock)
   #-(or :sb-thread :openmcl-native-threads)
-  (progn (warn "Locking not done on this implementation. Avoid threads.")
+  (progn (warn "Locking not done on this implementation. Avoid plokami calls from multiple threads.")
          nil)
   )
 
@@ -121,7 +121,7 @@
   #+:sb-thread (sb-thread:make-mutex :name "*compile-mutex* lock")
   #+:openmcl-native-threads (ccl:make-lock)
   #-(or :sb-thread :openmcl-native-threads)
-  (progn (warn "Locking not done on this implementation. Avoid threads.")
+  (progn (warn "Locking not done on this implementation. Avoid set-filter from multiple threads.")
          nil)
   )
 
@@ -176,7 +176,7 @@ values."
           (sb-sys:with-pinned-objects (buffer)
             (%memcpy (sb-sys:vector-sap buffer) bytes caplen))
           #-:sbcl
-          (loop :for i :from 0 :to (- caplen 1) :do
+          (loop :for i :from 0 :below caplen :do
                (setf (aref buffer i)
                      (mem-aref bytes :uint8 i)))
           ;; Call lisp packet handler
@@ -230,7 +230,7 @@ values."
     :documentation "Interface to capture packets from.")
    (promisc
     :initarg :promisc
-    :reader pcap-live-promisc
+    :reader pcap-live-promisc-p
     :initform nil
     :documentation "True if capturing in promiscuous mode.")
    (non-block
@@ -249,7 +249,7 @@ returning within timeout.")
     :initform nil
     :documentation "File descriptor that can be used with epoll/kqueue/select.")
    ;; Provide reader for inherited slots
-   (live :reader pcap-live-alive)
+   (live :reader pcap-live-alive-p)
    (datalink :reader pcap-live-datalink)
    (snaplen :initarg :snaplen :reader pcap-live-snaplen))
   (:documentation
@@ -263,7 +263,7 @@ returning within timeout.")
     :initform (error "Must supply filename to read packets from.")
     :documentation "File to read packets from.")
    (swapped
-    :reader pcap-reader-swapped
+    :reader pcap-reader-swapped-p
     :initform nil
     :documentation "Savefile uses different byte order from host system.")
    (major
@@ -275,7 +275,7 @@ returning within timeout.")
     :initform nil
     :documentation "Minor version of savefile.")
    ;; Provide reader for inherited slots
-   (live :reader pcap-reader-alive)
+   (live :reader pcap-reader-alive-p)
    (datalink :reader pcap-reader-datalink)
    (snaplen :initarg :snaplen :reader pcap-reader-snaplen))
   (:documentation
@@ -291,7 +291,7 @@ returning within timeout.")
    (dumper :initform nil
            :documentation "Foreign packet dumper object.")
    (datalink :initarg :datalink :initform "EN10MB" :reader pcap-writer-datalink)
-   (live :reader pcap-writer-alive)
+   (live :reader pcap-writer-alive-p)
    (snaplen :initarg :snaplen :reader pcap-writer-snaplen))
   (:documentation
    "Class for writing packets to a dumpfile."))
@@ -401,7 +401,7 @@ interfaces and `CAPTURE-FILE-ERROR' for pcap dumpfiles. For more details
 on callback handling, see CFFI callback `PCAP-HANDLER'."))
 
 
-(defgeneric set-nonblock (pcap-live block-mode)
+(defgeneric set-non-block (pcap-live block-mode)
   (:documentation "Sets non-blocking mode if `BLOCK-MODE' is `T', blocking
 mode if `NIL'. `BLOCK-MODE-ERROR' is signalled on failure and a restart,
 `CONTINUE-BLOCK-MODE' is installed, that can be invoked to continue."))
@@ -516,7 +516,7 @@ signalled on errors."))
           (incf *concurrentpcap*))
         (setf hashkey-pointer (foreign-alloc :int :initial-element hashkey))
         (when non-block
-          (set-nonblock cap t))))))
+          (set-non-block cap t))))))
 
 
 ;; Signals capture-file-error
@@ -601,7 +601,7 @@ signalled on errors."))
 
 
 ;; Signals block-mode-error
-(defmethod set-nonblock ((cap pcap-live) block-mode)
+(defmethod set-non-block ((cap pcap-live) block-mode)
   (restart-case
       (with-slots (pcap_t non-block descriptor) cap
         (with-error-buffer (eb)
@@ -734,7 +734,7 @@ signalled on errors."))
         #-:sbcl
         (loop
            :with foreign-buffer = (foreign-alloc :uint8 :count length)
-           :for i :from 0 :to (- length 1) :do
+           :for i :from 0 :below length :do
            (setf (mem-aref foreign-buffer :uint8 i)
                  (aref buffer i))
            :finally (%pcap-dump dumper header foreign-buffer)
@@ -840,7 +840,7 @@ skipping the filter setup."
                               (declare (ignore c))
                               (invoke-restart 'continue-no-filter))))
             (progn ,@body))
-       (when (pcap-live-alive ,pcaplive)
+       (when (pcap-live-alive-p ,pcaplive)
          (multiple-value-bind (recv dropped) (stats ,pcaplive)
            (format t "~%~A packets received, ~A dropped~%"
                    recv dropped)))
