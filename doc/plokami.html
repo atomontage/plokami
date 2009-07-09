@@ -96,6 +96,7 @@
 <li><a href="#with-pcap-writer"><code>with-pcap-writer</code></a></li>
 <li><a href="#with-pcap-reader"><code>with-pcap-reader</code></a></li>
 <li><a href="#with-pcap-interface"><code>with-pcap-interface</code></a></li>
+<li><a href="#with-capture-callback"><code>with-capture-callback</code></a></li>
 </ul></li></ul>
 <ul><li><a href="#generic-function">Generic functions</a>
 <ul>
@@ -195,25 +196,21 @@ Read packets from the network in non-blocking mode, filter for <strong>IP</stron
                             (pcap-live-datalink <strong>pcap</strong>))
     (set-filter <strong>pcap</strong> "ip")
     (loop
-       (capture <strong>pcap</strong> -1
-                #'(lambda (<strong>sec usec caplen len buffer</strong>)
-<i>                    ;; sec and usec: capture timestamp (UNIX epoch time)
-                    ;; caplen: size of captured packet
-                    ;; len: original size of packet (may be > caplen, depends on snaplen)
-                    ;; buffer: byte vector with packet contents</i>
-                    (dump <strong>writer buffer</strong> :length <strong>caplen</strong>
-                          :origlength <strong>len</strong> :sec <strong>sec</strong> :usec <strong>usec</strong>)
-                    (format t "Captured ~A bytes [~A]~%" caplen len)))
-        (sleep 0.01))))
+       (capture <strong>pcap</strong> -1 
+         (with-capture-callback <i> ; Binds sec, usec, caplen, len, buffer</i>
+           (dump <strong>writer buffer</strong> :length <strong>caplen</strong>
+                         :origlength <strong>len</strong> :sec <strong>sec</strong> :usec <strong>usec</strong>)
+           (format t "Captured ~A bytes [~A originally]~%" caplen len)))
+       (sleep 0.01))))
 </pre>
 
 Read all packets available in PCAP dumpfile <i>session.pcap</i> and process them.
 
 <pre>
 (with-pcap-reader (<strong>reader</strong> "session.pcap" :snaplen 1500)
-  (capture <strong>reader</strong> -1 #'(lambda (sec usec caplen len buffer)
-                       <i>;; packet processing code here</i>
-                       )))
+  (capture <strong>reader</strong> -1
+    (with-capture-callback
+      <i>;; packet processing code here</i>)))
 </pre>
 
 In all cases, BUFFER vector used in callback <i>handler</i> supplied to <a href="#capture"><code>capture</code></a> is 
@@ -355,6 +352,16 @@ skipping the filter setup.
     </blockquote>
     <!-- End of entry for WITH-PCAP-INTERFACE -->
 
+
+   <!-- Entry for WITH-CAPTURE-CALLBACK -->
+    <p><br />[Macro]<br /><a class="none" name="with-capture-callback"><b>with-capture-callback</b> <i><tt>&amp;body</tt> body</i> =&gt; <i>result</i></a>
+    </p>
+    <blockquote><br />
+    Create an anonymous function that accepts <b><i>sec</i></b>, <b><i>usec</i></b>, <b><i>caplen</i></b>, 
+    <b><i>len</i></b> and <b><i>buffer</i></b> as arguments (in that order) and executes forms in <b><i>body</i></b>.
+
+    </blockquote>
+    <!-- End of entry for WITH-CAPTURE-CALLBACK -->
 
 <br /><h3><a class="none" name="generic-function">Generic functions</a></h3>
 

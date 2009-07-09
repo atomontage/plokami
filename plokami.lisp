@@ -78,19 +78,12 @@
                             (pcap-live-datalink pcap))
     (loop
        (capture pcap -1
-                #'(lambda (sec usec caplen len buffer)
-                    ;; sec and usec at the time of the capture
-                    ;; caplen -> size of captured packet
-                    ;; len -> original size of packet
-                    ;; (may be > caplen, depends on snaplen)
-                    ;; buffer -> byte vector with packet contents
+                (with-capture-callback  ; Binds sec, usec, caplen, len, buffer
                     (dump writer buffer :length caplen
                           :origlength len :sec sec :usec usec)
-                    (format t
-                            "Captured packet, size: ~A original: ~A~%"
+                    (format t "Captured packet, size: ~A original: ~A~%"
                             caplen len)))
        ;; Better to use select/epoll/kqueue on pcap-live-descriptor
-       ;; Sleep will have to do for this example
        (sleep 0.01))))
 |#
 
@@ -498,22 +491,16 @@ signalled on errors."))
         (setf buffer (make-array snaplen :element-type
                                  '(unsigned-byte 8))
               live t)
-        ;; Hash pcap instance for callback discovery
-        #+:sb-thread
-        (sb-thread:with-mutex (*concurrentpcap-mutex*)
-          (setf (gethash *concurrentpcap* *callbacks*) cap
-                hashkey *concurrentpcap*)
-          (incf *concurrentpcap*))
-        #+:openmcl-native-threads
-        (ccl:with-lock-grabbed (*concurrentpcap-mutex*)
-          (setf (gethash *concurrentpcap* *callbacks*) cap
-                hashkey *concurrentpcap*)
-          (incf *concurrentpcap*))
-        #-(or sb-thread openmcl-native-threads)
-        (progn
-          (setf (gethash *concurrentpcap* *callbacks*) cap
-              hashkey *concurrentpcap*)
-          (incf *concurrentpcap*))
+        (flet ((hash-inst () (setf (gethash *concurrentpcap* *callbacks*) cap
+                                   hashkey *concurrentpcap*)
+                          (incf *concurrentpcap*)))
+          ;; Hash pcap instance for callback discovery
+          #+:sb-thread
+          (sb-thread:with-mutex (*concurrentpcap-mutex*) (hash-inst))
+          #+:openmcl-native-threads
+          (ccl:with-lock-grabbed (*concurrentpcap-mutex*) (hash-inst))
+          #-(or sb-thread openmcl-native-threads) (hash-inst)
+          )
         (setf hashkey-pointer (foreign-alloc :int :initial-element hashkey))
         (when non-block
           (set-non-block cap t))))))
@@ -543,22 +530,16 @@ signalled on errors."))
                 major (%pcap-major-version pcap_t)
                 minor (%pcap-minor-version pcap_t)
                 live t)
-          ;; Hash pcap instance for callback discovery
-          #+:sb-thread
-          (sb-thread:with-mutex (*concurrentpcap-mutex*)
-            (setf (gethash *concurrentpcap* *callbacks*) cap
-                  hashkey *concurrentpcap*)
-            (incf *concurrentpcap*))
-          #+:openmcl-native-threads
-          (ccl:with-lock-grabbed (*concurrentpcap-mutex*)
-            (setf (gethash *concurrentpcap* *callbacks*) cap
-                  hashkey *concurrentpcap*)
-            (incf *concurrentpcap*))
-          #-(or sb-thread openmcl-native-threads)
-          (progn
-            (setf (gethash *concurrentpcap* *callbacks*) cap
-                  hashkey *concurrentpcap*)
-            (incf *concurrentpcap*))
+          (flet ((hash-inst () (setf (gethash *concurrentpcap* *callbacks*) cap
+                                     hashkey *concurrentpcap*)
+                            (incf *concurrentpcap*)))
+            ;; Hash pcap instance for callback discovery
+            #+:sb-thread
+            (sb-thread:with-mutex (*concurrentpcap-mutex*) (hash-inst))
+            #+:openmcl-native-threads
+            (ccl:with-lock-grabbed (*concurrentpcap-mutex*) (hash-inst))
+            #-(or sb-thread openmcl-native-threads) (hash-inst)
+            )
           (setf hashkey-pointer
                 (foreign-alloc :int :initial-element hashkey)))))))
 
@@ -634,10 +615,17 @@ signalled on errors."))
 
 ;; Signals packet-inject-error
 (defmethod inject ((cap pcap-live) (buffer vector) &key length)
-  (when (null length)
-    (setf length (length buffer)))
+  (cond ((null length)
+         (setf length (length buffer)))
+        (t 
+         (assert (and (>= length 0)
+                      (<= length (length buffer))))))
   (with-slots (pcap_t) cap
     (let ((res -1))
+      #+sbcl
+      (sb-sys:with-pinned-objects (buffer)
+        (setf res (%pcap-inject pcap_t (sb-sys:vector-sap buffer) length)))
+      #-sbcl
       (loop :with foreign-buffer = (foreign-alloc :uint8 :count length)
          :for i :from 0 :below length :do
            (setf (mem-aref foreign-buffer :uint8 i) (aref buffer i))
@@ -658,20 +646,17 @@ signalled on errors."))
                                  (fp 'bpf_program))
             (when (= -1 (%pcap-lookupnet interface netp maskp eb))
               (error 'packet-filter-error :text (error-buffer-to-lisp eb)))
-            (when (= -1
-                     #+:sb-thread
-                     (sb-thread:with-mutex (*compile-mutex*)
-                       (%pcap-compile pcap_t fp filter 1
-                                      (mem-aref maskp :uint32)))
-                     #+:openmcl-native-threads
-                     (ccl:with-lock-grabbed (*compile-mutex*)
-                       (%pcap-compile pcap_t fp filter 1
-                                      (mem-aref maskp :uint32)))
-                     #-(or :sb-thread :openmcl-native-threads)
-                     (%pcap-compile pcap_t fp filter 1
-                                    (mem-aref maskp :uint32))
+            (flet ((compile-filter ()
+                     (%pcap-compile pcap_t fp filter 1 (mem-aref maskp :uint32))))
+              (when (= -1
+                       #+:sb-thread
+                       (sb-thread:with-mutex (*compile-mutex*) (compile-filter))
+                       #+:openmcl-native-threads
+                       (ccl:with-lock-grabbed (*compile-mutex*)
+                         (compile-filter))
+                     #-(or :sb-thread :openmcl-native-threads) (compile-filter)
                      )
-              (error 'packet-filter-error :text (%pcap-geterr pcap_t)))
+                (error 'packet-filter-error :text (%pcap-geterr pcap_t))))
             (when (= -1 (%pcap-setfilter pcap_t fp))
               (%pcap-freecode fp)
               (error 'packet-filter-error :text (%pcap-geterr pcap_t))))))
@@ -686,17 +671,16 @@ signalled on errors."))
   (restart-case
       (with-slots (pcap_t) cap
         (with-foreign-object (fp 'bpf_program)
-          (when (= -1
+          (flet ((compile-filter ()
+                   (%pcap-compile pcap_t fp filter 1 0)))
+            (when (= -1
                    #+:sb-thread
-                   (sb-thread:with-mutex (*compile-mutex*)
-                     (%pcap-compile pcap_t fp filter 1 0))
+                   (sb-thread:with-mutex (*compile-mutex*) (compile-filter))
                    #+:openmcl-native-threads
-                   (ccl:with-lock-grabbed (*compile-mutex*)
-                     (%pcap-compile pcap_t fp filter 1 0))
-                   #-(or :sb-thread :openmcl-native-threads)
-                   (%pcap-compile pcap_t fp filter 1 0)
+                   (ccl:with-lock-grabbed (*compile-mutex*) (compile-filter))
+                   #-(or :sb-thread :openmcl-native-threads) (compile-filter)
                    )
-            (error 'packet-filter-error :text (%pcap-geterr pcap_t)))
+              (error 'packet-filter-error :text (%pcap-geterr pcap_t))))
           (when (= -1 (%pcap-setfilter pcap_t fp))
             (%pcap-freecode fp)
             (error 'packet-filter-error :text (%pcap-geterr pcap_t)))))
@@ -721,6 +705,10 @@ signalled on errors."))
                                  "Error returned from gettimeofday."))
                 (t (setf sec s
                          usec u)))))
+      ;; Check for sane value before we start calling alien functions
+      (assert (and (>= length 0)
+                   (<= length (length buffer))
+                   (>= origlength 0)))
       (with-foreign-object (header 'pcap_pkthdr)
         (with-foreign-slots ((ts caplen len) header pcap_pkthdr)
           (with-foreign-slots ((tv_sec tv_usec) ts timeval)
