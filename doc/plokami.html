@@ -354,7 +354,7 @@ skipping the filter setup.
 
 
    <!-- Entry for WITH-CAPTURE-CALLBACK -->
-    <p><br />[Macro]<br /><a class="none" name="with-capture-callback"><b>with-capture-callback</b> <i><tt>&amp;body</tt> body</i> =&gt; <i>result</i></a>
+    <p><br />[Macro]<br /><a class="none" name="with-capture-callback"><b>with-capture-callback</b> <i><tt>&amp;body</tt> body</i> =&gt; <i>lambda function</i></a>
     </p>
     <blockquote><br />
     Create an anonymous function that accepts <b><i>sec</i></b>, <b><i>usec</i></b>, <b><i>caplen</i></b>, 
@@ -490,7 +490,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
 
     <!-- Entry for PCAP-WRITER-SNAPLEN -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-writer-snaplen"><b>pcap-writer-snaplen</b> <i>pcap-writer</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-writer-snaplen"><b>pcap-writer-snaplen</b> <i>pcap-writer</i> =&gt; <i>integer</i></a>
     </p>
     <blockquote><br />
     Number of bytes to write per packet processed.
@@ -500,7 +500,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
 
     <!-- Entry for PCAP-WRITER-FILE -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-writer-file"><b>pcap-writer-file</b> <i>pcap-writer</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-writer-file"><b>pcap-writer-file</b> <i>pcap-writer</i> =&gt; <i>string</i></a>
     </p>
     <blockquote><br />
     File to write packets to.
@@ -510,7 +510,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
 
     <!-- Entry for PCAP-WRITER-DATALINK -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-writer-datalink"><b>pcap-writer-datalink</b> <i>pcap-writer</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-writer-datalink"><b>pcap-writer-datalink</b> <i>pcap-writer</i> =&gt; <i>string</i></a>
     </p>
     <blockquote><br />
     Return string representation of the datalink protocol that is used by <b><i>pcap-writer</i></b> object.
@@ -519,7 +519,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
 
     <!-- Entry for PCAP-WRITER-ALIVE-P -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-writer-alive-p"><b>pcap-writer-alive-p</b> <i>pcap-writer</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-writer-alive-p"><b>pcap-writer-alive-p</b> <i>pcap-writer</i> =&gt; <i>boolean</i></a>
     </p>
     <blockquote><br />
 
@@ -531,7 +531,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
 
     <!-- Entry for PCAP-READER-SWAPPED-P -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-swapped-p"><b>pcap-reader-swapped-p</b> <i>pcap-reader</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-swapped-p"><b>pcap-reader-swapped-p</b> <i>pcap-reader</i> =&gt; <i>boolean</i></a>
     </p>
     <blockquote><br />
     <b><i>T</i></b> if savefile uses different byte order from host system.
@@ -542,7 +542,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
 
     <!-- Entry for PCAP-READER-SNAPLEN -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-snaplen"><b>pcap-reader-snaplen</b> <i>pcap-reader</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-snaplen"><b>pcap-reader-snaplen</b> <i>pcap-reader</i> =&gt; <i>integer</i></a>
     </p>
     <blockquote><br />
 
@@ -553,7 +553,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
 
     <!-- Entry for PCAP-READER-MINOR -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-minor"><b>pcap-reader-minor</b> <i>pcap-reader</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-minor"><b>pcap-reader-minor</b> <i>pcap-reader</i> =&gt; <i>integer</i></a>
     </p>
     <blockquote><br />
 
@@ -564,7 +564,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
 
     <!-- Entry for PCAP-READER-MAJOR -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-major"><b>pcap-reader-major</b> <i>pcap-reader</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-major"><b>pcap-reader-major</b> <i>pcap-reader</i> =&gt; <i>integer</i></a>
     </p>
     <blockquote><br />
 
@@ -575,7 +575,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
 
     <!-- Entry for PCAP-READER-FILE -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-file"><b>pcap-reader-file</b> <i>pcap-reader</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-file"><b>pcap-reader-file</b> <i>pcap-reader</i> =&gt; <i>string</i></a>
     </p>
     <blockquote><br />
 
@@ -586,7 +586,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
 
     <!-- Entry for PCAP-READER-DATALINK -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-datalink"><b>pcap-reader-datalink</b> <i>pcap-reader</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-datalink"><b>pcap-reader-datalink</b> <i>pcap-reader</i> =&gt; <i>string</i></a>
     </p>
     <blockquote><br />
 
@@ -597,7 +597,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
 
     <!-- Entry for PCAP-READER-ALIVE-P -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-alive-p"><b>pcap-reader-alive-p</b> <i>pcap-reader</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-alive-p"><b>pcap-reader-alive-p</b> <i>pcap-reader</i> =&gt; <i>boolean</i></a>
     </p>
     <blockquote><br />
 
@@ -609,7 +609,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
 
     <!-- Entry for PCAP-LIVE-TIMEOUT -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-live-timeout"><b>pcap-live-timeout</b> <i>pcap-live</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-timeout"><b>pcap-live-timeout</b> <i>pcap-live</i> =&gt; <i>integer</i></a>
     </p>
     <blockquote><br />
 
@@ -621,7 +621,7 @@ support it. No guarantee of returning within timeout is made.
 
 
     <!-- Entry for PCAP-LIVE-SNAPLEN -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-live-snaplen"><b>pcap-live-snaplen</b> <i>pcap-live</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-snaplen"><b>pcap-live-snaplen</b> <i>pcap-live</i> =&gt; <i>integer</i></a>
     </p>
     <blockquote><br />
     Return snapshot length (how many bytes to capture per packet).
@@ -631,7 +631,7 @@ support it. No guarantee of returning within timeout is made.
 
 
     <!-- Entry for PCAP-LIVE-PROMISC-P -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-live-promisc-p"><b>pcap-live-promisc-p</b> <i>pcap-live</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-promisc-p"><b>pcap-live-promisc-p</b> <i>pcap-live</i> =&gt; <i>boolean</i></a>
     </p>
     <blockquote><br />
 
@@ -642,7 +642,7 @@ support it. No guarantee of returning within timeout is made.
 
 
     <!-- Entry for PCAP-LIVE-INTERFACE -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-live-interface"><b>pcap-live-interface</b> <i>pcap-live</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-interface"><b>pcap-live-interface</b> <i>pcap-live</i> =&gt; <i>string</i></a>
     </p>
     <blockquote><br />
 
@@ -653,7 +653,7 @@ support it. No guarantee of returning within timeout is made.
 
 
     <!-- Entry for PCAP-LIVE-DESCRIPTOR -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-live-descriptor"><b>pcap-live-descriptor</b> <i>pcap-live</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-descriptor"><b>pcap-live-descriptor</b> <i>pcap-live</i> =&gt; <i>integer</i></a>
     </p>
     <blockquote><br />
 
@@ -664,7 +664,7 @@ support it. No guarantee of returning within timeout is made.
 
 
     <!-- Entry for PCAP-LIVE-DATALINK -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-live-datalink"><b>pcap-live-datalink</b> <i>pcap-live</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-datalink"><b>pcap-live-datalink</b> <i>pcap-live</i> =&gt; <i>string</i></a>
     </p>
     <blockquote><br />
     Return string representation of the datalink protocol that is used by <b><i>pcap-live</i></b> object.
@@ -675,7 +675,7 @@ support it. No guarantee of returning within timeout is made.
 
 
     <!-- Entry for PCAP-LIVE-ALIVE-P -->
-    <p><br />[Generic function]<br /><a class="none" name="pcap-live-alive-p"><b>pcap-live-alive-p</b> <i>pcap-live</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-alive-p"><b>pcap-live-alive-p</b> <i>pcap-live</i> =&gt; <i>boolean</i></a>
     </p>
     <blockquote><br />
     
