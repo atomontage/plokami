@@ -8,9 +8,10 @@
     </title>
     <style type="text/css">
       /*<![CDATA[*/
-      body { font-size: 0.9em; font-family: "Trebuchet MS", Verdana, sans-serif; }
-      code { font-size: medium;}
-      pre { padding:5px; background-color:#e0e0e0; font-size: 1.0em; font-family: Consolas, "Andale Mono", monospace;}
+      body { margin: 60px 100px; font-family: "Trebuchet MS", Verdana, sans-serif; max-width: 60em;}
+      pre { padding:5px; font-size: 1.1em; border: 1px solid #000000;}
+      code {font-size: 1.0em;}
+      h2 { border-bottom: 2px solid #000000;}
       h3, h4 { text-decoration: underline; }
       ul {list-style-type: disc;}
       a { text-decoration: none; padding: 1px 2px 1px 2px; }
@@ -25,14 +26,13 @@
       a.noborder:visited { text-decoration: none; padding: 0; } 
       a.noborder:hover { text-decoration: none; border: none; padding: 0; } 
       a.noborder:focus { text-decoration: none; border: none; padding: 0; } 
-      pre.none { padding:5px; background-color:#ffffff; }
       /*]]>*/
     </style>
   </head>
 
   <body bgcolor="white">
     <h1> PLOKAMI - Common Lisp PCAP Interface </h1>
-    <blockquote>
+
       <br />&nbsp;<br />
       <h2><a name="abstract" class="none">Abstract</a></h2>
       PLOKAMI is a lispy interface to <a href="http://www.tcpdump.org/">libpcap</a>
@@ -72,7 +72,6 @@
         <a href="http://www.opensource.org/licenses/bsd-license.php">BSD-style
       license</a> so you can basically do with it whatever you want.
       </p>
-    </blockquote>
 
     <br />&nbsp;<br /><h2><a class="none" name="contents">Contents</a></h2>
 
