@@ -47,7 +47,7 @@
         <br />Also, full support for Windows through <a href="http://www.winpcap.org">winpcap</a>
         but see <a href="http://www.mail-archive.com/winpcap-users@winpcap.polito.it/msg02414.html">here</a>. The library has been tested on <a href="http://www.sbcl.org">SBCL</a>
         (linux/darwin), <a href="http://clozure.com/clozurecl.html">ClozureCL</a> and
-        <a href="http://www.lispworks.com">LispWorks</a> (darwin/win32) btu should work on every platform
+        <a href="http://www.lispworks.com">LispWorks</a> (darwin/win32) but should work on every platform
         that <a href="http://common-lisp.net/project/cffi/">CFFI</a> supports.
       </p>
       <p>
@@ -417,7 +417,7 @@ is installed that can be invoked to continue on error.
     <blockquote><br />
 
 Injects <b><i>length</i></b> bytes to a live pcap interface
-(size of <b><i>buffer</i></b> if ommitted). <a href="#packet-inject-error"><code>PACKET-INJECT-ERROR</code></a> is signalled on
+(size of <b><i>buffer</i></b> if omitted). <a href="#packet-inject-error"><code>PACKET-INJECT-ERROR</code></a> is signalled on
 failure.
 
     </blockquote>
@@ -465,7 +465,7 @@ get called once for every packet received. The values passed are <b><i>sec</i></
 seconds/microseconds since the UNIX epoch (timeval structure in C) at the time
 of capture.<br /><b><i>caplen</i></b> corresponds to the number of bytes captured.<br /><b><i>len</i></b>
 corresponds to the number of bytes originally present in the packet but not
-necessarilly captured.<br /><b><i>buffer</i></b> is a statically allocated byte vector with the
+necessarily captured.<br /><b><i>buffer</i></b> is a statically allocated byte vector with the
 contents of the captured packet. This means that successive calls of the
 packet handler will overwrite its contents and if packet persistence is
 required, contents of <b><i>buffer</i></b> should be copied somewhere else from within
@@ -708,7 +708,7 @@ Signaled on errors during packet injection.
     </p>
     <blockquote><br />
 
-Signaled when a berkeley packet filter could not be established.
+Signaled when a Berkeley packet filter could not be established.
 
     </blockquote>
     <!-- End of entry for PACKET-FILTER-ERROR -->
