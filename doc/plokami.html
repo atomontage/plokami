@@ -9,8 +9,9 @@
     <style type="text/css">
       /*<![CDATA[*/
       body { margin: 60px 100px; font-family: "Trebuchet MS", Verdana, sans-serif; max-width: 60em;}
-      pre { padding:5px; font-size: 1.1em; border: 1px solid #000000;}
-      code {font-size: 1.0em;}
+      pre.code { 
+      padding:5px; font-size: 1.1em; border: 1px solid #000000; background: #000000; color: #ccc; }
+      code {font-size: 1.1em;}
       h2 { border-bottom: 2px solid #000000;}
       h3, h4 { text-decoration: underline; }
       ul {list-style-type: disc;}
@@ -147,7 +148,8 @@
     <br />&nbsp;<br /><h2><a class="none" name="download">Download</a></h2>
     <p>
       The current <strong>STABLE</strong> version is <strong>1.2</strong>, released July 2009. You can download it 
-      <a href="http://www.suspicious.org/~night/plokami/plokami.tar.gz">here</a> or install it automatically with 
+      <a href="http://www.suspicious.org/~night/plokami/plokami.tar.gz">here</a> 
+      [<a href="http://www.suspicious.org/~night/plokami/plokami.tar.gz.asc">sig</a>, <a href="http://www.suspicious.org/~night/pubkey.asc">pubkey</a>] or install it automatically with 
       <a href="http://www.cliki.net/ASDF-Install">ASDF-INSTALL</a>. For feature-requests, questions, patches email me at
     <strong>xristos (AT) suspicious</strong>.</p>
     
@@ -162,55 +164,46 @@
     returns <b><i>NIL</i></b>, make sure you have appropriate permissions for
     packet capture (read access on /dev/bpf* devices for OSX/BSD, root/CAP_NET_RAW on Linux).</p>
     
-<pre>
-;; Result list layout mirrors the one explained in <strong>pcap_findalldevs(3)</strong>
-<b>PLOKAMI></b><i> (find-all-devs)</i>
-(("lo0" NIL 1
-  (((:ADDR :AF_INET "127.0.0.1") (:NETMASK :AF_INET "255.0.0.0"))
-   ((:ADDR :AF_INET6 "fe80:1::1") (:NETMASK :AF_INET6 "ffff:ffff:ffff:ffff::"))
-   ((:ADDR :AF_INET6 "::1")
+    <pre class='code'>
+<span style="color: #008ed1;">PLOKAMI&gt; </span><span style="color: #ffffff;">(find-all-devs)</span>
+<span style="color: #b9FC6D;">(("lo0" NIL 1
+  (((:ADDR :AF_INET6 "::1")
     (:NETMASK :AF_INET6 "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"))
+   ((:ADDR :AF_INET "127.0.0.1") (:NETMASK :AF_INET "255.0.0.0"))
+   ((:ADDR :AF_INET6 "fe80::1") (:NETMASK :AF_INET6 "ffff:ffff:ffff:ffff::"))
    ((:ADDR :AF_LINK "lo0"))))
- ("wlt1" NIL 0 (((:ADDR :AF_LINK "wlt1"))))
  ("en1" NIL 0
-  (((:ADDR :AF_INET "10.0.3.1") (:NETMASK :AF_INET "255.255.255.0")
-    (:BROADADDR :AF_INET "10.0.3.255"))
-   ((:ADDR :AF_LINK "en1:0.16.cb.b7.37.39"))))
- ("ppp0" NIL 0
-  (((:ADDR :AF_INET "10.0.2.15") (:NETMASK :AF_INET "255.0.0.0")
-    (:DSTADDR :AF_INET "10.0.2.2"))
-   ((:ADDR :AF_LINK "ppp0"))))
- ("fw0" NIL 0 (((:ADDR :AF_LINK "fw0:0.16.cb.ff.fe.61.7a.b0"))))
- ("en0" NIL 0
-  (((:ADDR :AF_INET "192.16.109.30") (:NETMASK :AF_INET "255.255.252.0")
-    (:BROADADDR :AF_INET "192.16.111.255"))
-   ((:ADDR :AF_LINK "en0:0.16.cb.a5.1e.a2")))))
-</pre>
+  (((:ADDR :AF_INET "192.168.1.64") (:NETMASK :AF_INET "255.255.255.0")
+    (:BROADADDR :AF_INET "192.168.1.255"))
+   ((:ADDR :AF_LINK "en1:0.1e.52.70.2f.9e"))))
+ ("en0" NIL 0 (((:ADDR :AF_LINK "en0:0.1b.23.cc.ea.50"))))
+ ("fw0" NIL 0 (((:ADDR :AF_LINK "fw0:0.1d.41.cf.fe.78.b4.ee")))))</span></pre>
 
 Read packets from the network in non-blocking mode, filter for <strong>IP</strong>, process and write them out to a PCAP dumpfile. Interrupt lisp to clean up and exit.
 
-<pre>
-(with-pcap-interface (<strong>pcap</strong> "en0" :promisc t :snaplen 1500 :nbio t)
-  (with-pcap-writer (<strong>writer</strong> "session.pcap" :snaplen 1500 :datalink
-                            (pcap-live-datalink <strong>pcap</strong>))
-    (set-filter <strong>pcap</strong> "ip")
-    (loop
-       (capture <strong>pcap</strong> -1 
-         (with-capture-callback <i> ; Binds sec, usec, caplen, len, buffer</i>
-           (dump <strong>writer buffer</strong> :length <strong>caplen</strong>
-                         :origlength <strong>len</strong> :sec <strong>sec</strong> :usec <strong>usec</strong>)
-           (format t "Captured ~A bytes [~A originally]~%" caplen len)))
-       (sleep 0.01))))
-</pre>
+    
+<pre class='code'>
+(<span style="color: #ff5555;">with-pcap-interface</span> (pcap <span style="color: #ffff55;">"en0"</span> <span style="color: #5555ff;">:promisc</span> t <span style="color: #5555ff;">:snaplen</span> 1500 <span style="color: #5555ff;">:nbio</span> t)
+  (<span style="color: #ff5555;">with-pcap-writer</span> (writer <span style="color: #ffff55;">"session.pcap"</span> <span style="color: #5555ff;">:snaplen</span> 1500 <span style="color: #5555ff;">:datalink</span>
+                            (pcap-live-datalink pcap))
+    (set-filter pcap <span style="color: #ffff55;">"ip"</span>)
+    (<span style="color: #ff5555;">loop</span>
+       (capture pcap -1 
+         (<span style="color: #ff5555;">with-capture-callback</span> <span style="color: #008ed1;">; </span><span style="color: #008ed1;">Binds sec, usec, caplen, len, buffer
+</span>           (dump writer buffer <span style="color: #5555ff;">:length</span> caplen <span style="color: #5555ff;">:origlength</span> len <span style="color: #5555ff;">:sec</span> sec
+                               <span style="color: #5555ff;">:usec</span> usec)
+           (format t <span style="color: #ffff55;">"Captured ~A bytes [~A originally]~%"</span> caplen len)))
+       (sleep 0.01))))</pre>
+
 
 Read all packets available in PCAP dumpfile <i>session.pcap</i> and process them.
 
-<pre>
-(with-pcap-reader (<strong>reader</strong> "session.pcap" :snaplen 1500)
-  (capture <strong>reader</strong> -1
-    (with-capture-callback
-      <i>packet processing code here</i>)))
-</pre>
+<pre class='code'>
+(<span style="color: #ff5555;">with-pcap-reader</span> (reader <span style="color: #ffff55;">"session.pcap"</span> <span style="color: #5555ff;">:snaplen</span> 1500)
+  (capture reader -1
+    (<span style="color: #ff5555;">with-capture-callback</span>
+      packet processing code here)))</pre>
+
 
 In all cases, BUFFER vector used in callback <i>handler</i> supplied to <a href="#capture"><code>capture</code></a> is 
 allocated once per pcap instance and is overwritten every time <a href="#capture"><code>capture</code></a>
