@@ -165,13 +165,8 @@ values."
       (with-foreign-slots ((tv_sec tv_usec) ts timeval)
         (with-slots (buffer handler) pcap
           ;; Copy packet data from C to lisp
-          #+:sbcl
-          (sb-sys:with-pinned-objects (buffer)
-            (%memcpy (sb-sys:vector-sap buffer) bytes caplen))
-          #-:sbcl
-          (loop :for i :from 0 :below caplen :do
-               (setf (aref buffer i)
-                     (mem-aref bytes :uint8 i)))
+          (with-pointer-to-vector-data (ptr buffer)
+            (%memcpy ptr bytes caplen))
           ;; Call lisp packet handler
           (funcall handler tv_sec tv_usec
                    caplen len buffer))))))
@@ -622,15 +617,8 @@ signalled on errors."))
                       (<= length (length buffer))))))
   (with-slots (pcap_t) cap
     (let ((res -1))
-      #+sbcl
-      (sb-sys:with-pinned-objects (buffer)
-        (setf res (%pcap-inject pcap_t (sb-sys:vector-sap buffer) length)))
-      #-sbcl
-      (loop :with foreign-buffer = (foreign-alloc :uint8 :count length)
-         :for i :from 0 :below length :do
-           (setf (mem-aref foreign-buffer :uint8 i) (aref buffer i))
-         :finally (setf res (%pcap-inject pcap_t foreign-buffer length))
-           (foreign-free foreign-buffer))
+      (with-pointer-to-vector-data (ptr buffer)
+        (setf res (%pcap-inject pcap_t ptr length)))
       (when (= -1 res)
         (error 'packet-inject-error :text (%pcap-geterr pcap_t)))
       res)))
