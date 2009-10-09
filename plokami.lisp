@@ -704,17 +704,8 @@ signalled on errors."))
                   len origlength
                   tv_sec sec
                   tv_usec usec)))
-        #+:sbcl
-        (sb-sys:with-pinned-objects (buffer)
-          (%pcap-dump dumper header (sb-sys:vector-sap buffer)))
-        #-:sbcl
-        (loop
-           :with foreign-buffer = (foreign-alloc :uint8 :count length)
-           :for i :from 0 :below length :do
-           (setf (mem-aref foreign-buffer :uint8 i)
-                 (aref buffer i))
-           :finally (%pcap-dump dumper header foreign-buffer)
-           (foreign-free foreign-buffer))))))
+        (with-pointer-to-vector-data (ptr buffer)
+          (%pcap-dump dumper header ptr))))))
 
 
 
