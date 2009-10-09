@@ -610,18 +610,18 @@ signalled on errors."))
 
 ;; Signals packet-inject-error
 (defmethod inject ((cap pcap-live) (buffer vector) &key length)
-  (cond ((null length)
-         (setf length (length buffer)))
-        (t 
-         (assert (and (>= length 0)
-                      (<= length (length buffer))))))
-  (with-slots (pcap_t) cap
-    (let ((res -1))
-      (with-pointer-to-vector-data (ptr buffer)
-        (setf res (%pcap-inject pcap_t ptr length)))
-      (when (= -1 res)
-        (error 'packet-inject-error :text (%pcap-geterr pcap_t)))
-      res)))
+  (let ((len (length buffer)))
+    (assert (>= len 0))
+    (cond ((null length)
+           (setf length len))
+          (t (assert (<= length len))))
+    (with-slots (pcap_t) cap
+      (let ((res -1))
+        (with-pointer-to-vector-data (ptr buffer)
+          (setf res (%pcap-inject pcap_t ptr length)))
+        (when (= -1 res)
+          (error 'packet-inject-error :text (%pcap-geterr pcap_t)))
+        res))))
 
 
 ;; Signals packet-filter-error
@@ -723,7 +723,7 @@ signalled on errors."))
 
 
 ;; Signals network-interface-error
-;; Definitely not proud of this one
+;; Messy but it works
 (defun find-all-devs ()
   "Return a list of all network devices that can be opened for capture. Result
 list mirrors layout explained in pcap_findalldevs(3)."
@@ -738,8 +738,8 @@ list mirrors layout explained in pcap_findalldevs(3)."
                                          2)))
                    (with-foreign-object (str :char 16)
                      (let ((res (%inet-ntop 2 ptr str 16)))
-                       (cond
-                         ((zerop res) nil)
+                       (case res
+                         (0 nil)
                          (t (foreign-string-to-lisp str)))))))
                (ipv6-extract (data)     ; Extract ipv6 address
                  (let ((ptr (inc-pointer (foreign-slot-pointer data
@@ -748,8 +748,8 @@ list mirrors layout explained in pcap_findalldevs(3)."
                                          6)))
                    (with-foreign-object (str :char 46)
                      (let ((res (%inet-ntop 30 ptr str 46)))
-                       (cond
-                         ((zerop res) nil)
+                       (case res
+                         (0 nil)
                          (t (foreign-string-to-lisp str)))))))
                (link-extract (data)     ; Extract link-layer address
                  (%link-ntoa data))
@@ -758,15 +758,15 @@ list mirrors layout explained in pcap_findalldevs(3)."
                    (return-from process-sockaddr nil))
                  (with-foreign-slots ((sa_len sa_family) addr sockaddr)
                    (let (output fam)
-                     (cond
-                       ((= sa_family 0) (setf fam :AF_UNSPEC)
-                        (setf output :UNSUPPORTED))
-                       ((= sa_family 2) (setf fam :AF_INET)
-                        (setf output (ipv4-extract addr)))
-                       ((= sa_family 30) (setf fam :AF_INET6)
-                        (setf output (ipv6-extract addr)))
-                       ((= sa_family 18) (setf fam :AF_LINK)
-                        (setf output (link-extract addr)))
+                     (case sa_family
+                       (0 (setf fam :AF_UNSPEC)
+                          (setf output :UNSUPPORTED))
+                       (2 (setf fam :AF_INET)
+                          (setf output (ipv4-extract addr)))
+                       (30 (setf fam :AF_INET6)
+                           (setf output (ipv6-extract addr)))
+                       (18 (setf fam :AF_LINK)
+                           (setf output (link-extract addr)))
                        (t (setf fam :UNSUPPORTED)
                           (setf output :UNSUPPORTED)))
                      (list tag fam output)))))
