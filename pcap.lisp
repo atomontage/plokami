@@ -139,7 +139,7 @@
 ;;; ------------------------------
 ;;; Functions
 
-#+:sbcl
+
 (defcfun ("memcpy" %memcpy) :pointer
   (dst :pointer)
   (src :pointer)
