@@ -76,16 +76,28 @@
 (with-pcap-interface (pcap "en0" :promisc t :snaplen 1500 :nbio t)
   (with-pcap-writer (writer "session.pcap" :snaplen 1500 :datalink
                             (pcap-live-datalink pcap))
+    (set-filter pcap "ip")
     (loop
        (capture pcap -1
-                (with-capture-callback  ; Binds sec, usec, caplen, len, buffer
+                (lambda (sec usec caplen len buffer)
                     (dump writer buffer :length caplen
                           :origlength len :sec sec :usec usec)
-                    (format t "Captured packet, size: ~A original: ~A~%"
+                    (format t "Packet length: ~A bytes, on the wire: ~A bytes~%"
                             caplen len)))
        ;; Better to use select/epoll/kqueue on pcap-live-descriptor
        (sleep 0.01))))
+
+
+;;;; Read all packets available in PCAP dumpfile session.pcap and process them.
+(with-pcap-reader (reader "session.pcap" :snaplen 1500)
+  (capture pcap -1
+           (lambda (sec usec caplen len buffer)
+             ;; Packet processing code here
+             (format t "Packet length: ~A bytes, on the wire: ~A bytes~%"
+                     caplen len))))
+             
 |#
+
 
 
 

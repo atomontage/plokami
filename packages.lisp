@@ -69,6 +69,6 @@
            :find-all-devs              ; [function]
            :with-pcap-interface        ; [macro]
            :with-pcap-reader           ; [macro]
-           :with-pcap-writer           ; [macro]
-           :with-capture-callback))    ; [macro]
+           :with-pcap-writer))         ; [macro]
+
 

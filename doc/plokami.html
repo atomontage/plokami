@@ -96,7 +96,6 @@
 <li><a href="#with-pcap-writer"><code>with-pcap-writer</code></a></li>
 <li><a href="#with-pcap-reader"><code>with-pcap-reader</code></a></li>
 <li><a href="#with-pcap-interface"><code>with-pcap-interface</code></a></li>
-<li><a href="#with-capture-callback"><code>with-capture-callback</code></a></li>
 </ul></li></ul>
 <ul><li><a href="#generic-function">Generic functions</a>
 <ul>
@@ -181,29 +180,30 @@
 
 Read packets from the network in non-blocking mode, filter for <strong>IP</strong>, process and write them out to a PCAP dumpfile. Interrupt lisp to clean up and exit.
 
-    
 <pre class='code'>
 (<span style="color: #ff5555;">with-pcap-interface</span> (pcap <span style="color: #ffff55;">"en0"</span> <span style="color: #5555ff;">:promisc</span> t <span style="color: #5555ff;">:snaplen</span> 1500 <span style="color: #5555ff;">:nbio</span> t)
   (<span style="color: #ff5555;">with-pcap-writer</span> (writer <span style="color: #ffff55;">"session.pcap"</span> <span style="color: #5555ff;">:snaplen</span> 1500 <span style="color: #5555ff;">:datalink</span>
                             (pcap-live-datalink pcap))
     (set-filter pcap <span style="color: #ffff55;">"ip"</span>)
     (<span style="color: #ff5555;">loop</span>
-       (capture pcap -1 
-         (<span style="color: #ff5555;">with-capture-callback</span> <span style="color: #008ed1;">; </span><span style="color: #008ed1;">Binds sec, usec, caplen, len, buffer
-</span>           (dump writer buffer <span style="color: #5555ff;">:length</span> caplen <span style="color: #5555ff;">:origlength</span> len <span style="color: #5555ff;">:sec</span> sec
-                               <span style="color: #5555ff;">:usec</span> usec)
-           (format t <span style="color: #ffff55;">"Captured ~A bytes [~A originally]~%"</span> caplen len)))
-       (sleep 0.01))))</pre>
-
+       (capture pcap -1
+                (<span style="color: #ff5555;">lambda</span> (sec usec caplen len buffer)
+                    (dump writer buffer <span style="color: #5555ff;">:length</span> caplen
+                          <span style="color: #5555ff;">:origlength</span> len <span style="color: #5555ff;">:sec</span> <span style="background-color: #333;">sec</span> <span style="color: #5555ff;">:usec</span> usec)
+                    (format t <span style="color: #ffff55;">"Packet length: ~A bytes, on the wire: ~A bytes~%"</span>
+                            caplen len)))
+       <span style="color: #008ed1;">;; </span><span style="color: #008ed1;">Better to use select/epoll/kqueue on pcap-live-descriptor
+</span>       (sleep 0.01))))</pre>
 
 Read all packets available in PCAP dumpfile <i>session.pcap</i> and process them.
 
 <pre class='code'>
 (<span style="color: #ff5555;">with-pcap-reader</span> (reader <span style="color: #ffff55;">"session.pcap"</span> <span style="color: #5555ff;">:snaplen</span> 1500)
-  (capture reader -1
-    (<span style="color: #ff5555;">with-capture-callback</span>
-      packet processing code here)))</pre>
-
+  (capture pcap -1
+           (<span style="color: #ff5555;">lambda</span> (sec usec caplen len buffer)
+             <span style="color: #008ed1;">;; </span><span style="color: #008ed1;">Packet processing code here
+</span>             (format t <span style="color: #ffff55;">"Packet length: ~A bytes, on the wire: ~A bytes~%"</span>
+                     caplen len))))</pre>
 
 In all cases, BUFFER vector used in callback <i>handler</i> supplied to <a href="#capture"><code>capture</code></a> is 
 allocated once per pcap instance and is overwritten every time <a href="#capture"><code>capture</code></a>
@@ -343,17 +343,6 @@ skipping the filter setup.
 
     </blockquote>
     <!-- End of entry for WITH-PCAP-INTERFACE -->
-
-
-   <!-- Entry for WITH-CAPTURE-CALLBACK -->
-    <p><br />[Macro]<br /><a class="none" name="with-capture-callback"><b>with-capture-callback</b> <i><tt>&amp;body</tt> body</i> =&gt; <i>lambda function</i></a>
-    </p>
-    <blockquote><br />
-    Create an anonymous function that accepts <b><i>sec</i></b>, <b><i>usec</i></b>, <b><i>caplen</i></b>, 
-    <b><i>len</i></b> and <b><i>buffer</i></b> as arguments (in that order) and executes forms in <b><i>body</i></b>.
-
-    </blockquote>
-    <!-- End of entry for WITH-CAPTURE-CALLBACK -->
 
 <br /><h3><a class="none" name="generic-function">Generic functions</a></h3>
 
