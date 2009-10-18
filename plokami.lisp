@@ -589,23 +589,36 @@ signalled on errors."))
 
 
 ;; Signals block-mode-error
-(defmethod set-non-block ((cap pcap-live) block-mode)
+(defmethod set-non-block ((cap pcap-live) (block-mode (eql t)))
   (restart-case
       (with-slots (pcap_t non-block descriptor) cap
         (with-error-buffer (eb)
-          (when (= -1 (%pcap-setnonblock pcap_t block-mode eb))
+          (when (= -1 (%pcap-setnonblock pcap_t t eb))
             (error 'block-mode-error :text
                    (error-buffer-to-lisp eb))))
-        (let ((fd (%pcap-get-selectable-fd pcap_t)))
-          (when (= -1 fd)
-            (setf fd nil)
-            (warn "Non-blocking mode requested, selectable FD not available."))
-          (setf non-block block-mode
-                descriptor fd)))
+        (setf descriptor (%pcap-get-selectable-fd pcap_t))
+        (when (= -1 descriptor)
+          (setf descriptor nil)
+          (warn "Non-blocking mode requested, selectable FD not available."))
+        (setf non-block t))
     (continue-block-mode ()
       :report "Continue without setting non-blocking mode."
       (warn "Error setting non-blocking mode."))))
+  
 
+;; Signals block-mode-error
+(defmethod set-non-block ((cap pcap-live) (block-mode (eql nil)))
+  (restart-case
+      (with-slots (pcap_t non-block descriptor) cap
+        (with-error-buffer (eb)
+          (when (= -1 (%pcap-setnonblock pcap_t nil eb))
+            (error 'block-mode-error :text
+                   (error-buffer-to-lisp eb))))
+        (setf descriptor nil
+              non-block nil))
+    (continue-block-mode ()
+      :report "Continue without setting blocking mode."
+      (warn "Error setting blocking mode."))))
 
 
 ;; Signals network-interface-error
