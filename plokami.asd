@@ -37,7 +37,7 @@
   :name "Plokami"
   :description "Common Lisp PCAP interface."
   :serial t
-  :version "1.2.1"
+  :version "1.3"
   :depends-on (:cffi)
   :components ((:file "packages")
                (:file "pcap")
