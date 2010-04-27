@@ -28,9 +28,7 @@
 ;;;; plokami.lisp
 ;;;; Lispy interface to libpcap
 ;;;;
-;;;;
 ;;;; DONE: BPF, inject, dumpfile input, dumpfile output, live capture, nbio.
-;;;; TODO-ClozureCL: Optimize buffer copying.
 ;;;;
 ;;;; When using multiple pcap instances to capture packets at the same time
 ;;;; on different threads, access to *callbacks* and *concurrentpcap*
@@ -341,7 +339,7 @@ used when capturing/reading the packets."
 ;;; Conditions
 
 (define-condition plokami-error (error)
-  ((text :initarg :text :reader text))
+  ((text :initarg :text :reader plokami-error-text))
   (:report (lambda (condition stream)
              (format stream "~A" (text condition))))
   (:documentation "Generic condition for this package."))

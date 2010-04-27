@@ -50,6 +50,7 @@
            :pcap-writer-datalink       ; [reader]
            :pcap-writer-alive-p        ; [reader]
            :pcap-writer-snaplen        ; [reader]
+           :plokami-error-text         ; [condition reader]
            :plokami-error              ; [condition]
            :network-interface-error    ; [condition]
            :packet-filter-error        ; [condition]
