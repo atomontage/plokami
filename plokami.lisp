@@ -375,9 +375,11 @@ established."))
 (defgeneric capture (pcap-process-mixin packets handler)
   (:documentation "Only works for `PCAP-LIVE' or `PCAP-READER' instances.
 Captures and processes maximum number of `PACKETS'. Minimum is
-zero. Return 0 when no packets available (for dumpfiles: when end of file)
-otherwise return number of packets processed which can be
-fewer than the maximum given in `PACKETS' (due to pcap buffer).
+zero. Return 0 when no packets available (did not pass installed packet filter,
+end of file for dumpfiles, read timeout expired before packets arrive,
+no packets available at the time of the call if in non-blocking-mode) otherwise
+return number of packets processed which can be fewer than the maximum given
+in `PACKETS' (due to internal libpcap buffer).
 
 A count of -1 in `PACKETS' processes all the packets received so far when live
 capturing, or all the packets in a file when reading a pcap dumpfile.
@@ -414,8 +416,8 @@ packets dropped and packets dropped by interface (in this order).
 
 (defgeneric inject (pcap-live buffer &key length)
   (:documentation "Injects `LENGTH' bytes to a live pcap interface
-(size of `BUFFER' if ommitted). `PACKET-INJECT-ERROR' is signalled on
-failure."))
+(size of `BUFFER' if ommitted). Return number of bytes injected on success.
+`PACKET-INJECT-ERROR' is signalled on failure."))
 
 
 (defgeneric set-filter (pcap-process-mixin string)

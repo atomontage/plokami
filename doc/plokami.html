@@ -127,6 +127,7 @@
 <li><a href="#pcap-live-descriptor"><code>pcap-live-descriptor</code></a></li>
 <li><a href="#pcap-live-datalink"><code>pcap-live-datalink</code></a></li>
 <li><a href="#pcap-live-alive-p"><code>pcap-live-alive-p</code></a></li>
+<li><a href="#plokami-error-text"><code>plokami-error-text</code></a></li>
 
 </ul></li></ul>
 <ul><li><a href="#condition">Conditions</a>
@@ -365,7 +366,7 @@ Deallocates resources for <b><i>pcap-live</i></b>, <b><i>pcap-reader</i></b>,
 
 
     <!-- Entry for STATS -->
-    <p><br />[Generic function]<br /><a class="none" name="stats"><b>stats</b> <i>pcap-live</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="stats"><b>stats</b> <i>pcap-live</i> =&gt; <i>capture statistics</i></a>
     </p>
     <blockquote><br />
 
@@ -406,13 +407,14 @@ is installed that can be invoked to continue on error.
     <!-- End of entry for SET-FILTER -->
 
     <!-- Entry for INJECT -->
-    <p><br />[Generic function]<br /><a class="none" name="inject"><b>inject</b> <i>pcap-live buffer <tt>&amp;key</tt> length</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="inject"><b>inject</b> <i>pcap-live buffer <tt>&amp;key</tt> length</i> =&gt; <i>integer</i></a>
     </p>
     <blockquote><br />
 
 Injects <b><i>length</i></b> bytes to a live pcap interface
-(size of <b><i>buffer</i></b> if omitted). <a href="#packet-inject-error"><code>PACKET-INJECT-ERROR</code></a> is signalled on
-failure.
+(size of <b><i>buffer</i></b> if omitted). Return number of bytes injected
+on success. <a href="#packet-inject-error"><code>PACKET-INJECT-ERROR</code></a>
+is signalled on failure.
 
     </blockquote>
     <!-- End of entry for INJECT -->
@@ -439,15 +441,17 @@ signalled on errors.
 
 
     <!-- Entry for CAPTURE -->
-    <p><br />[Generic function]<br /><a class="none" name="capture"><b>capture</b> <i>pcap-process-mixin packets handler</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="capture"><b>capture</b> <i>pcap-process-mixin packets handler</i> =&gt; <i>integer</i></a>
     </p>
     <blockquote>
 
 <p>Only works for <b><i>pcap-live</i></b> or <b><i>pcap-reader</i></b> instances.
 Captures and processes maximum number of <b><i>packets</i></b>. Minimum is
-zero. Return 0 when no packets available (for dumpfiles: when end of file)
-otherwise return number of packets processed which can be
-fewer than the maximum given in <b><i>packets</i></b> (due to pcap buffer).</p>
+zero. Return 0 when no packets available (did not pass installed packet filter,
+end of file for dumpfiles, read timeout expired before packets arrive or no
+packets available at the time of the call if in non-blocking mode) otherwise
+return number of packets processed which can be fewer than the maximum given
+in <b><i>packets</i></b> (due to internal libpcap buffer).</p>
 
 <p>A count of -1 in <b><i>packets</i></b> processes all the packets received so far when live
 capturing, or all the packets in a file when reading a pcap dumpfile.
@@ -671,6 +675,17 @@ support it. No guarantee of returning within timeout is made.
     </blockquote>
     <!-- End of entry for PCAP-LIVE-ALIVE -->
 
+    <!-- Entry for PLOKAMI-ERROR-TEXT -->
+    <p><br />[Generic function]<br /><a class="none" name="plokami-error-text"><b>plokami-error-text</b> <i>condition</i> =&gt; <i>string</i>
+</a>
+    </p>
+    <blockquote><br />
+
+    Reader that returns error description for all <a href="#plokami-error"><code>plokami-error</code></a> conditions.
+
+    </blockquote>
+    <!-- End of entry for PLOKAMI-ERROR-TEXT -->
+
 
 <br /><h3><a class="none" name="condition">Conditions</a></h3>
 
@@ -684,7 +699,6 @@ Generic condition for this package. Superclass of all other <b>PLOKAMI</b> condi
 
     </blockquote>
     <!-- End of entry for PLOKAMI-ERROR -->
-
 
     <!-- Entry for PACKET-INJECT-ERROR -->
     <p><br />[Condition type]<br /><a class="none" name="packet-inject-error"><b>packet-inject-error</b></a>
