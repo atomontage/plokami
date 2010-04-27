@@ -154,10 +154,6 @@
 (defcfun ("link_ntoa" %link-ntoa) :string
   (sdl :pointer))
 
-(defcfun ("gettimeofday" %gettimeofday) :int
-  (tp :pointer)
-  (tzp :pointer))
-
 
 ;;; Pcap specific
 

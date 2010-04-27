@@ -159,7 +159,8 @@
     <strong>xristos (AT) suspicious</strong>.</p>
     
     <p> The latest <strong>DEVELOPMENT</strong> version is available from <a href="http://www.suspicious.org/~night/plokami.git/">git</a> 
-    repository. Try it if you are having problems with stable.
+    repository. Try it if you are having problems with stable (the documentation on this website applies to the latest
+        <strong>STABLE</strong> version. Check up to date documentation in git release if you go that route).
     </p>
 
     <br />&nbsp;<br /><h2><a class="none" name="examples">Examples</a></h2>
@@ -194,8 +195,8 @@ Read packets from the network in non-blocking mode, filter for <strong>IP</stron
     (<span style="color: #ff5555;">loop</span>
        (capture pcap -1
                 (<span style="color: #ff5555;">lambda</span> (sec usec caplen len buffer)
-                    (dump writer buffer <span style="color: #5555ff;">:length</span> caplen
-                          <span style="color: #5555ff;">:origlength</span> len <span style="color: #5555ff;">:sec</span> <span style="background-color: #333;">sec</span> <span style="color: #5555ff;">:usec</span> usec)
+                    (dump writer buffer sec usec <span style="color: #5555ff;">:length</span> caplen
+                          <span style="color: #5555ff;">:origlength</span> len)
                     (format t <span style="color: #ffff55;">"Packet length: ~A bytes, on the wire: ~A bytes~%"</span>
                             caplen len)))
        <span style="color: #008ed1;">;; </span><span style="color: #008ed1;">Better to use select/epoll/kqueue on pcap-live-descriptor
@@ -400,7 +401,7 @@ mode if <b><i>NIL</i></b>. <a href="#block-mode-error"><code>BLOCK-MODE-ERROR</c
 
 Sets a packet filter on a <b><i>pcap-live</i></b> or <b><i>pcap-reader</i></b>
 instance. The filter should be given as a BPF expression in <b><i>string</i></b>.
-<a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a> is signalled on failure. A restart, <b><i>continue-no-filter</i></b>
+<br /><a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a> is signalled on failure. A restart, <b><i>continue-no-filter</i></b>
 is installed that can be invoked to continue on error.
 
     </blockquote>
@@ -413,15 +414,16 @@ is installed that can be invoked to continue on error.
 
 Injects <b><i>length</i></b> bytes to a live pcap interface
 (size of <b><i>buffer</i></b> if omitted). Return number of bytes injected
-on success. <a href="#packet-inject-error"><code>PACKET-INJECT-ERROR</code></a>
-is signalled on failure.
+on success. For performance reasons <b><i>buffer</i></b> should be a byte vector 
+allocated with <b><i>cffi:make-shareable-byte-vector</i></b>.
+<br /><a href="#packet-inject-error"><code>PACKET-INJECT-ERROR</code></a> is signalled on failure.
 
     </blockquote>
     <!-- End of entry for INJECT -->
 
 
     <!-- Entry for DUMP -->
-    <p><br />[Generic function]<br /><a class="none" name="dump"><b>dump</b> <i>pcap-writer data <tt>&amp;key</tt> length origlength sec usec</i> =&gt; <i>result</i></a>
+    <p><br />[Generic function]<br /><a class="none" name="dump"><b>dump</b> <i>pcap-writer data sec usec <tt>&amp;key</tt> length origlength</i> =&gt; <i>result</i></a>
     </p>
     <blockquote>
 
@@ -432,8 +434,10 @@ to write and is set to the size of <b><i>data</i></b> when omitted.<br />
 <b><i>origlength</i></b> should be
 set to the number of bytes originally present in the packet and is set to
 <b><i>length</i></b> when omitted.<br /><b><i>sec</i></b> and <b><i>usec</i></b> should be set to seconds/microseconds
-since the UNIX epoch at the time of capture (timeval structure in C)
-and are set to current values when omitted.<br /><a href="#capture-file-error"><code>CAPTURE-FILE-ERROR</code></a> is
+since the UNIX epoch at the time of capture (timeval structure in C).
+If you are using your own source buffer (instead of the one used by <b><i>plokami</i></b>),
+it should be allocated with <b><i>cffi:make-shareable-byte-vector</i></b>.
+<br /><a href="#capture-file-error"><code>CAPTURE-FILE-ERROR</code></a> is
 signalled on errors.
 
     </blockquote>
@@ -463,7 +467,8 @@ get called once for every packet received. The values passed are <b><i>sec</i></
 seconds/microseconds since the UNIX epoch (timeval structure in C) at the time
 of capture.<br /><b><i>caplen</i></b> corresponds to the number of bytes captured.<br /><b><i>len</i></b>
 corresponds to the number of bytes originally present in the packet but not
-necessarily captured.<br /><b><i>buffer</i></b> is a statically allocated byte vector with the
+necessarily captured.<br /><b><i>buffer</i></b> is a statically allocated byte vector
+(via <b><i>cffi:make-shareable-byte-vector</i></b>) with the
 contents of the captured packet. This means that successive calls of the
 packet handler will overwrite its contents and if packet persistence is
 required, contents of <b><i>buffer</i></b> should be copied somewhere else from within

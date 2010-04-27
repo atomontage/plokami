@@ -78,8 +78,7 @@
     (loop
        (capture pcap -1
                 (lambda (sec usec caplen len buffer)
-                    (dump writer buffer :length caplen
-                          :origlength len :sec sec :usec usec)
+                    (dump writer buffer sec usec :length caplen :origlength len)
                     (format t "Packet length: ~A bytes, on the wire: ~A bytes~%"
                             caplen len)))
        ;; Better to use select/epoll/kqueue on pcap-live-descriptor
@@ -95,8 +94,6 @@
                      caplen len))))
              
 |#
-
-
 
 
 (in-package :plokami)
@@ -154,15 +151,6 @@
      (unwind-protect
           (progn ,@body)
        (free-error-buffer ,error-buffer))))
-
-(defun get-time-of-day ()
-  "Return `NIL' if gettimeofday fails else seconds, microseconds as multiple
-values."
-  (with-foreign-object (tv 'timeval)
-    (when (= -1 (%gettimeofday tv (null-pointer)))
-      (return-from get-time-of-day))
-    (with-foreign-slots ((tv_sec tv_usec) tv timeval)
-      (values tv_sec tv_usec))))
 
 ;;; This is passed to the foreign side and when called, invokes the lisp
 ;;; packet handler that the user defined (slot /handler/ in pcap-process-mixin)
@@ -390,11 +378,11 @@ get called once for every packet received. The values passed are `SEC', `USEC',
 seconds/microseconds since the UNIX epoch (timeval structure in C) at the time
 of capture. `CAPLEN' corresponds to the number of bytes captured. `LEN'
 corresponds to the number of bytes originally present in the packet but not
-necessarilly captured. `BUFFER' is a statically allocated byte vector with the
-contents of the captured packet. This means that successive calls of the
-packet handler will overwrite its contents and if packet persistence is
-required, contents of `BUFFER' should be copied somewhere else from within
-`HANDLER'.
+necessarilly captured. `BUFFER' is a statically allocated byte vector (via
+`CFFI:MAKE-SHAREABLE-BYTE-VECTOR') with the contents of the captured packet.
+This means that successive calls of the packet handler will overwrite its
+contents and if packet persistence is required, contents of `BUFFER' should
+be copied somewhere else from within `HANDLER'.
 
 If an error occurs, `PACKET-CAPTURE-ERROR' is signalled for live
 interfaces and `CAPTURE-FILE-ERROR' for pcap dumpfiles. For more details
@@ -417,7 +405,8 @@ packets dropped and packets dropped by interface (in this order).
 (defgeneric inject (pcap-live buffer &key length)
   (:documentation "Injects `LENGTH' bytes to a live pcap interface
 (size of `BUFFER' if ommitted). Return number of bytes injected on success.
-`PACKET-INJECT-ERROR' is signalled on failure."))
+For performance reasons `BUFFER' should be a byte vector allocated with
+`CFFI:MAKE-SHAREABLE-BYTE-VECTOR'. `PACKET-INJECT-ERROR' is signalled on failure."))
 
 
 (defgeneric set-filter (pcap-process-mixin string)
@@ -427,15 +416,16 @@ instance. The filter should be given as a BPF expression in `STRING'.
 is installed that can be invoked to continue on error."))
 
 
-(defgeneric dump (pcap-writer data &key length origlength sec usec)
+(defgeneric dump (pcap-writer data sec usec &key length origlength)
   (:documentation "Writes contents of byte vector `DATA' to `PCAP-WRITER'
 instance (which corresponds to a pcap dumpfile). `LENGTH' is the number of bytes
 to write and is set to the size of `DATA' when omitted. `ORIGLENGTH' should be
 set to the number of bytes originally present in the packet and is set to
 `LENGTH' when omitted. `SEC' and `USEC' should be set to seconds/microseconds
-since the UNIX epoch at the time of capture (timeval structure in C)
-and are set to current values when omitted. `CAPTURE-FILE-ERROR' is
-signalled on errors."))
+since the UNIX epoch at the time of capture (timeval structure in C).
+If you are using your own source buffer (instead of the one used by `PLOKAMI'),
+it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'.
+`CAPTURE-FILE-ERROR' is signalled on errors. "))
 
 
 (defmethod stop progn ((cap pcap-mixin))
@@ -495,8 +485,7 @@ signalled on errors."))
             (error 'network-interface-error :text
                    (format nil "~A: Unsupported datalink protocol." interface)))
           (setf datalink (car dlink)))
-        (setf buffer (make-array snaplen :element-type
-                                 '(unsigned-byte 8))
+        (setf buffer (cffi:make-shareable-byte-vector snaplen)
               live t)
         (flet ((hash-inst () (setf (gethash *concurrentpcap* *callbacks*) cap
                                    hashkey *concurrentpcap*)
@@ -532,7 +521,7 @@ signalled on errors."))
           ;; Initialize instance slots
           (setf datalink (car dlink)
                 snaplen (%pcap-snapshot pcap_t)
-                buffer (make-array snaplen :element-type '(unsigned-byte 8))
+                buffer (cffi:make-shareable-byte-vector snaplen)
                 swapped (%pcap-is-swapped pcap_t)
                 major (%pcap-major-version pcap_t)
                 minor (%pcap-minor-version pcap_t)
@@ -564,8 +553,8 @@ signalled on errors."))
             live t))))
 
 
-;; Signals packet-capture-error
-(defmethod capture ((cap pcap-live) (packets integer) (phandler function))
+;; Signals packet-capture-error or capture-file-error
+(defmethod capture ((cap pcap-process-mixin) (packets integer) (phandler function))
   (with-slots (pcap_t hashkey handler hashkey-pointer) cap
       (setf handler phandler)
       ;; %pcap-loop and %pcap-next do not work in non-blocking mode
@@ -573,19 +562,11 @@ signalled on errors."))
       (let ((res (%pcap-dispatch pcap_t packets (callback pcap-handler)
                                  hashkey-pointer)))
         (when (= -1 res)
-          (error 'packet-capture-error :text (%pcap-geterr pcap_t)))
+          (error
+           (typecase cap
+             (pcap-live 'packet-capture-error)
+             (pcap-reader 'capture-file-error)) :text (%pcap-geterr pcap_t)))
         res)))
-
-
-;; Signals capture-file-error
-(defmethod capture ((cap pcap-reader) (packets integer) (phandler function))
-  (with-slots (pcap_t hashkey handler hashkey-pointer) cap
-    (setf handler phandler)
-    (let ((res (%pcap-dispatch pcap_t packets (callback pcap-handler)
-                               hashkey-pointer)))
-      (when (= -1 res)
-        (error 'capture-file-error :text (%pcap-geterr pcap_t)))
-      res)))
 
 
 ;; Signals block-mode-error
@@ -704,24 +685,19 @@ signalled on errors."))
 
 ;; Signals capture-file-error
 (defmethod dump ((writer pcap-writer) (buffer vector)
-                 &key length origlength sec usec)
+                 (sec integer) (usec integer) &key length origlength)
   (with-slots (dumper live) writer
     (when live
       (when (null length)
         (setf length (length buffer)))
       (when (null origlength)
         (setf origlength length))
-      (when (or (null sec)
-                (null usec))
-        (multiple-value-bind (s u) (get-time-of-day)
-          (cond ((null s) (error 'capture-file-error :text
-                                 "Error returned from gettimeofday."))
-                (t (setf sec s
-                         usec u)))))
       ;; Check for sane value before we start calling alien functions
       (assert (and (>= length 0)
                    (<= length (length buffer))
-                   (>= origlength 0)))
+                   (>= origlength 0)
+                   (>= sec 0)
+                   (>= usec 0)))
       (with-foreign-object (header 'pcap_pkthdr)
         (with-foreign-slots ((ts caplen len) header pcap_pkthdr)
           (with-foreign-slots ((tv_sec tv_usec) ts timeval)
@@ -731,7 +707,6 @@ signalled on errors."))
                   tv_usec usec)))
         (with-pointer-to-vector-data (ptr buffer)
           (%pcap-dump dumper header ptr))))))
-
 
 
 ;;; ------------------------------
