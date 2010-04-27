@@ -341,7 +341,7 @@ used when capturing/reading the packets."
 (define-condition plokami-error (error)
   ((text :initarg :text :reader plokami-error-text))
   (:report (lambda (condition stream)
-             (format stream "~A" (text condition))))
+             (format stream "~A" (plokami-error-text condition))))
   (:documentation "Generic condition for this package."))
 
 (define-condition network-interface-error (plokami-error) ()
