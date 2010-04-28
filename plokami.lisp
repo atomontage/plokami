@@ -166,7 +166,8 @@
           (with-pointer-to-vector-data (ptr buffer)
             (%memcpy ptr bytes caplen))
           ;; Call lisp packet handler
-          (funcall handler tv_sec tv_usec
+          (funcall handler (logand #xffffffff tv_sec) ; Avoid 64bit issues
+                   (logand #xffffffff tv_usec)
                    caplen len buffer))))))
 
 
