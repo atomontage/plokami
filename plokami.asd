@@ -36,8 +36,9 @@
 (defsystem :plokami
   :name "Plokami"
   :description "Common Lisp PCAP interface."
+  :author "xristos@suspicious.org"
   :serial t
-  :version "1.4"
+  :version "1.5"
   :depends-on (:cffi)
   :components ((:file "packages")
                (:file "pcap")

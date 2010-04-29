@@ -67,7 +67,7 @@
 
 ;;;; Examples:
 ;;;;
-;;;; Read/process/dump packets in realtime, do not block.
+;;;; Read/process/dump packets in realtime, do not block on capture.
 ;;;; Interrupt to cleanup and exit.
 
 #|
@@ -286,7 +286,7 @@ returning within timeout.")
 ;;; ------------------------------
 ;;; Constructors
 
-(defun make-pcap-live (interface &key promisc nbio (timeout 100) (snaplen 68))
+(defun make-pcap-live (interface &key promisc nbio (timeout 50) (snaplen 68))
   "Creates and returns a `PCAP-LIVE' instance that is used for live packet
 capture from a network interface.
 
@@ -298,7 +298,8 @@ capture from a network interface.
 that support it. No guarantee of actually returning within `TIMEOUT' is made.
 Use non-blocking mode if that is not adequate. `SNAPLEN' should contain the
 number of bytes captured per packet. Default is 68 which should be enough
-for headers."
+for headers. `NETWORK-INTERFACE-ERROR' or `BLOCK-MODE-ERROR' is signaled
+on errors."
   (make-instance 'pcap-live :if interface  :promisc promisc :nbio nbio
                  :timeout timeout :snaplen snaplen))
 
@@ -309,7 +310,7 @@ packets from a pcap dumpfile.
 
 `FILE' is the filename to open and read packets from. `SNAPLEN' should contain
 the number of bytes read per packet captured. Default is 68 which should
-be enough for headers."
+be enough for headers. `CAPTURE-FILE-READ-ERROR' is signaled on errors."
   (make-instance 'pcap-reader :file file :snaplen snaplen))
 
 
@@ -321,7 +322,8 @@ to a pcap dumpfile.
 a string that represents the datalink protocol of the network interface used
 to capture the packets. Default is Ethernet. `SNAPLEN' should contain the
 number of bytes read per packet captured and should be the same as the one
-used when capturing/reading the packets."
+used when capturing/reading the packets.
+`CAPTURE-FILE-WRITE-ERROR' is signaled on errors."
   (make-instance 'pcap-writer :file file :datalink datalink :snaplen snaplen))
 
 ;;; ------------------------------
@@ -333,26 +335,20 @@ used when capturing/reading the packets."
              (format stream "~A" (plokami-error-text condition))))
   (:documentation "Generic condition for this package."))
 
-(define-condition network-interface-error (plokami-error) ()
-  (:documentation "Signaled on all network interface errors."))
-
-(define-condition capture-file-error (plokami-error) ()
-  (:documentation "Signaled on all pcap file errors."))
-
-(define-condition packet-filter-error (plokami-error) ()
-  (:documentation "Signaled when a berkeley packet filter could not be
-established."))
-
-(define-condition packet-capture-error (plokami-error) ()
-  (:documentation "Signaled on error during live packet capture."))
-
-(define-condition packet-inject-error (plokami-error) ()
-  (:documentation "Signaled on errors during packet injection."))
-
-(define-condition block-mode-error (plokami-error) ()
-  (:documentation "Signaled on error when changing blocking mode."))
-
-
+(macrolet ((define-plokami-conditions (list)
+             `(progn
+                ,@(loop :for (name . documentation) :in list :collect
+                     `(define-condition ,name (plokami-error) ()
+                        (:documentation ,documentation))))))
+  (define-plokami-conditions
+      ((network-interface-error . "Signaled on all network interface errors.")
+       (capture-file-read-error . "Signaled on all pcap readfile errors.")
+       (capture-file-write-error . "Signaled on all pcap dumpfile errors.")
+       (packet-filter-error . "Signaled when a berkeley packet filter could not be established.")
+       (packet-capture-error . "Signaled on error during live packet capture.")
+       (packet-inject-error . "Signaled on errors during packet injection.")
+       (block-mode-error . "Signaled on error when changing blocking mode."))))
+        
 ;;; ------------------------------
 ;;; Generic functions & methods
 
@@ -386,8 +382,8 @@ contents and if packet persistence is required, contents of `BUFFER' should
 be copied somewhere else from within `HANDLER'.
 
 If an error occurs, `PACKET-CAPTURE-ERROR' is signalled for live
-interfaces and `CAPTURE-FILE-ERROR' for pcap dumpfiles. For more details
-on callback handling, see CFFI callback `PCAP-HANDLER'."))
+interfaces and `CAPTURE-FILE-READ-ERROR' for pcap dumpfiles (reading).
+For more details on callback handling, see CFFI callback `PCAP-HANDLER'."))
 
 
 (defgeneric set-non-block (pcap-live block-mode)
@@ -425,8 +421,9 @@ set to the number of bytes originally present in the packet and is set to
 `LENGTH' when omitted. `SEC' and `USEC' should be set to seconds/microseconds
 since the UNIX epoch at the time of capture (timeval structure in C).
 If you are using your own source buffer (instead of the one used by `PLOKAMI'),
-it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'.
-`CAPTURE-FILE-ERROR' is signalled on errors. "))
+it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'. As `LIBPCAP'
+does not return useful value on pcap_dump() no `PLOKAMI' specific conditions,
+beyond simple assertions of argument checks, are raised by this function."))
 
 
 (defmethod stop progn ((cap pcap-mixin))
@@ -455,9 +452,7 @@ it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'.
       (%pcap-dump-flush dumper)
       (%pcap-dump-close dumper))))
 
-
-
-;; Signals network-interface-error
+;; Signals network-interface-error or block-mode-error
 (defmethod initialize-instance :after ((cap pcap-live) &key)
   (with-slots (pcap_t interface snaplen promisc timeout datalink buffer handler
                       hashkey hashkey-pointer live non-block descriptor)
@@ -503,7 +498,7 @@ it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'.
           (set-non-block cap t))))))
 
 
-;; Signals capture-file-error
+;; Signals capture-file-read-error
 (defmethod initialize-instance :after ((cap pcap-reader) &key)
   (with-slots (pcap_t file snaplen datalink buffer handler hashkey live
                       swapped major minor hashkey-pointer) cap
@@ -511,13 +506,13 @@ it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'.
       (let* ((res (%pcap-open-offline file eb))
              (ebtext (error-buffer-to-lisp eb)))
         (when (null-pointer-p res)
-          (error 'capture-file-error :text ebtext))
+          (error 'capture-file-read-error :text ebtext))
         (setf pcap_t res)
         ;; Supported datalink test
         (let ((dlink (rassoc (%pcap-datalink pcap_t) *supported-datalinks*)))
           (when (not dlink)
             (%pcap-close pcap_t)
-            (error 'capture-file-error :text
+            (error 'capture-file-read-error :text
                    (format nil "~A: Unsupported datalink protocol." file)))
           ;; Initialize instance slots
           (setf datalink (car dlink)
@@ -540,7 +535,8 @@ it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'.
           (setf hashkey-pointer
                 (foreign-alloc :int :initial-element hashkey)))))))
 
-;; Signals capture-file-error
+
+;; Signals capture-file-write-error
 (defmethod initialize-instance :after ((cap pcap-writer) &key)
   (with-slots (pcap_t dumper file datalink live snaplen) cap
     (setf pcap_t (%pcap-open-dead (%pcap-datalink-name-to-val datalink)
@@ -549,12 +545,12 @@ it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'.
       (when (null-pointer-p res)
         (let ((errtext (%pcap-geterr pcap_t)))
           (%pcap-close pcap_t)
-          (error 'capture-file-error :text errtext)))
+          (error 'capture-file-write-error :text errtext)))
       (setf dumper res
             live t))))
 
 
-;; Signals packet-capture-error or capture-file-error
+;; Signals packet-capture-error or capture-file-read-error
 (defmethod capture ((cap pcap-process-mixin) (packets integer) (phandler function))
   (with-slots (pcap_t hashkey handler hashkey-pointer) cap
       (setf handler phandler)
@@ -566,7 +562,7 @@ it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'.
           (error
            (typecase cap
              (pcap-live 'packet-capture-error)
-             (pcap-reader 'capture-file-error)) :text (%pcap-geterr pcap_t)))
+             (pcap-reader 'capture-file-read-error)) :text (%pcap-geterr pcap_t)))
         res)))
 
 
@@ -684,30 +680,30 @@ it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'.
       (warn "Error setting packet filter."))))
 
 
-;; Signals capture-file-error
+;; Doesn't signal a PLOKAMI specific error because pcap does not allow us to
 (defmethod dump ((writer pcap-writer) (buffer vector)
                  (sec integer) (usec integer) &key length origlength)
-  (with-slots (dumper live) writer
-    (when live
-      (when (null length)
-        (setf length (length buffer)))
-      (when (null origlength)
-        (setf origlength length))
-      ;; Check for sane value before we start calling alien functions
-      (assert (and (>= length 0)
-                   (<= length (length buffer))
-                   (>= origlength 0)
-                   (>= sec 0)
-                   (>= usec 0)))
-      (with-foreign-object (header 'pcap_pkthdr)
-        (with-foreign-slots ((ts caplen len) header pcap_pkthdr)
-          (with-foreign-slots ((tv_sec tv_usec) ts timeval)
-            (setf caplen length
-                  len origlength
-                  tv_sec sec
-                  tv_usec usec)))
-        (with-pointer-to-vector-data (ptr buffer)
-          (%pcap-dump dumper header ptr))))))
+  (with-slots (dumper) writer
+    (when (null length)
+      (setf length (length buffer)))
+    (when (null origlength)
+      (setf origlength length))
+    ;; Check for sane values before we start calling alien functions
+    (assert (and (>= length 0)
+                 (<= length (length buffer))
+                 (>= origlength 0)
+                 (>= sec 0)
+                 (>= usec 0)))
+    (with-foreign-object (header 'pcap_pkthdr)
+      (with-foreign-slots ((ts caplen len) header pcap_pkthdr)
+        (with-foreign-slots ((tv_sec tv_usec) ts timeval)
+          (setf caplen length
+                len origlength
+                tv_sec sec
+                tv_usec usec)))
+      (with-pointer-to-vector-data (ptr buffer)
+        ;; void pcap_dump() does not return anything useful
+        (%pcap-dump dumper header ptr)))))
 
 
 ;;; ------------------------------
@@ -718,7 +714,9 @@ it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'.
 ;; Messy but it works
 (defun find-all-devs ()
   "Return a list of all network devices that can be opened for capture. Result
-list mirrors layout explained in pcap_findalldevs(3)."
+list mirrors layout explained in pcap_findalldevs(3). `NIL' is returned when
+no interfaces are available, possibly due to permission issues.
+Signals `NETWORK-INTERFACE-ERROR' on errors."
   (with-error-buffer (eb)
     (with-foreign-pointer (devp 4)
       (when (= -1 (%pcap-findalldevs devp eb))

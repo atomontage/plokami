@@ -137,7 +137,8 @@
 <li><a href="#packet-filter-error"><code>packet-filter-error</code></a></li>
 <li><a href="#packet-capture-error"><code>packet-capture-error</code></a></li>
 <li><a href="#network-interface-error"><code>network-interface-error</code></a></li>
-<li><a href="#capture-file-error"><code>capture-file-error</code></a></li>
+<li><a href="#capture-file-write-error"><code>capture-file-write-error</code></a></li>
+<li><a href="#capture-file-read-error"><code>capture-file-read-error</code></a></li>
 <li><a href="#block-mode-error"><code>block-mode-error</code></a></li>
 </ul></li></ul>
 <ul><li><a href="#restart">Restarts</a>
@@ -251,7 +252,7 @@ to a pcap dumpfile.</p>
 a string that represents the datalink protocol of the network interface used
 to capture the packets. Default is "EN10MB" for Ethernet. See <b>*supported-datalinks*</b> in <b>pcap.lisp</b> for more.<br />
 <b><i>snaplen</i></b> should contain the number of bytes read per packet captured and should be the same as the one
-used when capturing/reading the packets.
+used when capturing/reading the packets. <a href="#capture-file-write-error"><code>CAPTURE-FILE-WRITE-ERROR</code></a> is signaled on errors.
 
     </blockquote>
     <!-- End of entry for MAKE-PCAP-WRITER -->
@@ -267,7 +268,7 @@ packets from a pcap dumpfile.</p>
 
 <b><i>file</i></b> is the filename to open and read packets from.<br /><b><i>snaplen</i></b> should contain
 the number of bytes read per packet captured. Default is 68 which should
-be enough for headers.
+be enough for headers. <a href="#capture-file-read-error"><code>CAPTURE-FILE-READ-ERROR</code></a> is signaled on errors.
 
     </blockquote>
     <!-- End of entry for MAKE-PCAP-READER -->
@@ -284,12 +285,13 @@ capture from a network interface.</p>
 <b><i>interface</i></b> is a string that defines the network interface to use for capture.<br />
 <b><i>promisc</i></b> should be <b><i>T</i></b> for promiscuous mode, <b><i>NIL</i></b> otherwise.<br />
 <b><i>nbio</i></b> should be <b><i>T</i></b> when non-blocking operation is required. <b><i>NIL</i></b> otherwise
-(default).<br /><b><i>timeout</i></b> should hold read timeout in milliseconds.
+(default).<br /><b><i>timeout</i></b> should hold read timeout in milliseconds (default is 50).
 0 will wait forever. Only used when in blocking mode and only in platforms
 that support it. No guarantee of actually returning within <b><i>timeout</i></b> is made.
 Use non-blocking mode if that is not adequate.<br /><b><i>snaplen</i></b> should contain the
 number of bytes captured per packet. Default is 68 which should be enough
-for headers.
+for headers. <a href="#network-interface-error"><code>NETWORK-INTERFACE-ERROR</code></a> or
+<a href="#block-mode-error"><code>BLOCK-MODE-ERROR</code></a> is signaled on errors.
 
     </blockquote>
     <!-- End of entry for MAKE-PCAP-LIVE -->
@@ -301,7 +303,9 @@ for headers.
     <blockquote><br />
 
 Return a list of all network devices that can be opened for capture. Result
-list mirrors layout explained in pcap_findalldevs(3).
+list mirrors layout explained in pcap_findalldevs(3). <b><i>NIL</i></b> is returned when
+no interfaces are available, possibly due to permission issues.<br />
+Signals <a href="#network-interface-error"><code>NETWORK-INTERFACE-ERROR</code></a> on errors.
 
     </blockquote>
     <!-- End of entry for FIND-ALL-DEVS -->
@@ -437,8 +441,8 @@ set to the number of bytes originally present in the packet and is set to
 since the UNIX epoch at the time of capture (timeval structure in C).
 If you are using your own source buffer (instead of the one used by <b><i>plokami</i></b>),
 it should be allocated with <b><i>cffi:make-shareable-byte-vector</i></b>.
-<br /><a href="#capture-file-error"><code>CAPTURE-FILE-ERROR</code></a> is
-signalled on errors.
+As <b><i>libpcap</i></b> does not return useful value on pcap_dump() no <b><i>plokami</i></b> 
+specific conditions, beyond simple assertions of argument checks, are raised by this function.
 
     </blockquote>
     <!-- End of entry for DUMP -->
@@ -475,7 +479,7 @@ required, contents of <b><i>buffer</i></b> should be copied somewhere else from 
 <b><i>handler</i></b>.
 <p>
 If an error occurs, <a href="#packet-capture-error"><code>PACKET-CAPTURE-ERROR</code></a> is signalled for live
-interfaces and <a href="#capture-file-error"><code>CAPTURE-FILE-ERROR</code></a> for pcap dumpfiles. For more details
+interfaces and <a href="#capture-file-read-error"><code>CAPTURE-FILE-READ-ERROR</code></a> for pcap dumpfiles. For more details
 on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
     </blockquote>
@@ -750,14 +754,24 @@ Signaled on all network interface errors.
 
 
     <!-- Entry for CAPTURE-FILE-ERROR -->
-    <p><br />[Condition type]<br /><a class="none" name="capture-file-error"><b>capture-file-error</b></a>
+    <p><br />[Condition type]<br /><a class="none" name="capture-file-write-error"><b>capture-file-write-error</b></a>
     </p>
     <blockquote><br />
 
-Signaled on all pcap file errors.
+Signaled on all pcap dumpfile errors.
 
     </blockquote>
     <!-- End of entry for CAPTURE-FILE-ERROR -->
+
+    <!-- Entry for CAPTURE-FILE-READ-ERROR -->
+    <p><br />[Condition type]<br /><a class="none" name="capture-file-read-error"><b>capture-file-read-error</b></a>
+    </p>
+    <blockquote><br />
+
+Signaled on all pcap readfile errors.
+
+    </blockquote>
+    <!-- End of entry for CAPTURE-FILE-READ-ERROR -->
 
 
     <!-- Entry for BLOCK-MODE-ERROR -->
