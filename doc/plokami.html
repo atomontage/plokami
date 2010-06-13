@@ -148,7 +148,7 @@
 </ul></li></ul>
 
       </li>
-      <li><a href="#ack">Acknowledgements</a></li>
+      <li><a href="#ack">Acknowledgments</a></li>
     </ul>
     
     <br />&nbsp;<br /><h2><a class="none" name="download">Download</a></h2>
@@ -333,7 +333,7 @@ the resulting instance in <b><i>writer</i></b>. Forms in body are wrapped in an
 Call <a href="#make-pcap-reader"><code>MAKE-PCAP-READER</code></a> using <b><i>file</i></b>, <b><i>options</i></b> as arguments and store the
 resulting instance in <b><i>reader</i></b>. Forms in body are wrapped in an <b><i>unwind-protect</i></b>
 form that takes care of deallocating resources on error. A restart is also
-automatically invoked when <a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a> is signalled,
+automatically invoked when <a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a> is signaled,
 skipping the filter setup.
 
     </blockquote>
@@ -341,15 +341,15 @@ skipping the filter setup.
 
 
     <!-- Entry for WITH-PCAP-INTERFACE -->
-    <p><br />[Macro]<br /><a class="none" name="with-pcap-interface"><b>with-pcap-interface</b> <i>(pcaplive iface <tt>&amp;rest</tt> options) <tt>&amp;body</tt> body</i> =&gt; <i>result</i></a>
+    <p><br />[Macro]<br /><a class="none" name="with-pcap-interface"><b>with-pcap-interface</b> <i>(live iface <tt>&amp;rest</tt> options) <tt>&amp;body</tt> body</i> =&gt; <i>result</i></a>
     </p>
     <blockquote><br />
 
 Call <a href="#make-pcap-live"><code>MAKE-PCAP-LIVE</code></a> using <b><i>iface</i></b>, <b><i>options</i></b> as arguments and store
-the resulting instance in <b><i>pcaplive</i></b>. Forms in body are wrapped in an
+the resulting instance in <b><i>live</i></b>. Forms in body are wrapped in an
 <b><i>unwind-protect</i></b> form that takes care of deallocating resources on
 error and also returns packet capture statistics when possible. A restart
-is also automatically invoked when <a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a> is signalled,
+is also automatically invoked when <a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a> is signaled,
 skipping the filter setup.
 
     </blockquote>
@@ -379,7 +379,7 @@ Returns packet capture statistics from the start of the run
 to the time of the call for live interface capture only. Statistics are
 returned as multiple values and correspond to packets received,
 packets dropped and packets dropped by interface (in this order).
-<a href="#network-interface-error"><code>NETWORK-INTERFACE-ERROR</code></a> is signalled on failure.
+<a href="#network-interface-error"><code>NETWORK-INTERFACE-ERROR</code></a> is signaled on failure.
 
     </blockquote>
     <!-- End of entry for STATS -->
@@ -391,7 +391,7 @@ packets dropped and packets dropped by interface (in this order).
     <blockquote><br />
 
 Sets non-blocking mode if <b><i>block-mode</i></b> is <b><i>T</i></b>, blocking
-mode if <b><i>NIL</i></b>. <a href="#block-mode-error"><code>BLOCK-MODE-ERROR</code></a> is signalled on failure and a restart,
+mode if <b><i>NIL</i></b>. <a href="#block-mode-error"><code>BLOCK-MODE-ERROR</code></a> is signaled on failure and a restart,
 <b><i>continue-block-mode</i></b> is installed, that can be invoked to continue.
 
     </blockquote>
@@ -405,7 +405,7 @@ mode if <b><i>NIL</i></b>. <a href="#block-mode-error"><code>BLOCK-MODE-ERROR</c
 
 Sets a packet filter on a <b><i>pcap-live</i></b> or <b><i>pcap-reader</i></b>
 instance. The filter should be given as a BPF expression in <b><i>string</i></b>.
-<br /><a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a> is signalled on failure. A restart, <b><i>continue-no-filter</i></b>
+<br /><a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a> is signaled on failure. A restart, <b><i>continue-no-filter</i></b>
 is installed that can be invoked to continue on error.
 
     </blockquote>
@@ -420,7 +420,7 @@ Injects <b><i>length</i></b> bytes to a live pcap interface
 (size of <b><i>buffer</i></b> if omitted). Return number of bytes injected
 on success. For performance reasons <b><i>buffer</i></b> should be a byte vector 
 allocated with <b><i>cffi:make-shareable-byte-vector</i></b>.
-<br /><a href="#packet-inject-error"><code>PACKET-INJECT-ERROR</code></a> is signalled on failure.
+<br /><a href="#packet-inject-error"><code>PACKET-INJECT-ERROR</code></a> is signaled on failure.
 
     </blockquote>
     <!-- End of entry for INJECT -->
@@ -478,7 +478,7 @@ packet handler will overwrite its contents and if packet persistence is
 required, contents of <b><i>buffer</i></b> should be copied somewhere else from within
 <b><i>handler</i></b>.
 <p>
-If an error occurs, <a href="#packet-capture-error"><code>PACKET-CAPTURE-ERROR</code></a> is signalled for live
+If an error occurs, <a href="#packet-capture-error"><code>PACKET-CAPTURE-ERROR</code></a> is signaled for live
 interfaces and <a href="#capture-file-read-error"><code>CAPTURE-FILE-READ-ERROR</code></a> for pcap dumpfiles. For more details
 on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
 
@@ -807,7 +807,7 @@ Signaled on errors when changing blocking mode.
     <!-- End of entry for CONTINUE-NO-FILTER -->
 
 
-<br />&nbsp;<br /><h2><a class="none" name="ack">Acknowledgements</a></h2>
+<br />&nbsp;<br /><h2><a class="none" name="ack">Acknowledgments</a></h2>
 
 <p>
 This documentation was prepared with <a href="http://weitz.de/documentation-template/">DOCUMENTATION-TEMPLATE</a>.

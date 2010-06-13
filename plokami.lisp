@@ -1,74 +1,51 @@
-;;; Copyright (c) 2008 xristos@suspicious.org.  All rights reserved.
+;;; plokami.lisp --- Lispy interface to libpcap
+;;
+;;; Features:
+;;
+;; * BPF
+;; * Injection
+;; * Dumpfile input/output
+;; * Live capture/NBIO
+;;
+;; When using multiple pcap instances to capture packets at the same time
+;; on different threads, access to *callbacks* and *concurrent-pcap*
+;; should be synchronized according to implementation. This is currently
+;; implemented only for SBCL and CCL.
+;;
+;; Also, thread safety of libpcap itself is not clearly defined so proceed
+;; with caution. Multithreading seems to work fine with the exception of
+;; pcap_compile which uses global data structures and should only be called
+;; in a synchronized way. This is done in set-filter for SBCL and CCL using
+;; *compile-mutex*.
+;;
+;; Finally, read timeouts on live packet capture are not supported on every
+;; platform. This is a libpcap/operating system issue. If in doubt, read
+;; the platform specific libpcap documentation and experiment.
+;; You should not depend on read timeouts firing (ie. capture returning
+;; within timeout) if your code needs to run on multiple operating systems.
+;;
+;; The best way to make sure that capture does not wait forever, is to use
+;; non-blocking mode in combination with your own event notification scheme
+;; (select/epoll/kqueue etc). This is also the preferred way to capture
+;; packets from multiple pcap instances, threads should be considered as
+;; a last resort.
+;;
+;; How to use:
+;;
+;; 1) Invoke constructors: make-pcap-live, make-pcap-reader, make-pcap-writer
+;;
+;; 2) Invoke methods specialized on these three classes mainly
+;;    capture, dump, set-non-block, set-filter, stats
+;;
+;; 3) Invoke stop when finished
+;;
+;; OR use convenience macros (with-pcap-interface, with-pcap-reader,
+;;                            with-pcap-writer) that wrap most of the above
 
-;;; Redistribution and use in source and binary forms, with or without
-;;; modification, are permitted provided that the following conditions
-;;; are met:
-
-;;;   * Redistributions of source code must retain the above copyright
-;;;     notice, this list of conditions and the following disclaimer.
-
-;;;   * Redistributions in binary form must reproduce the above
-;;;     copyright notice, this list of conditions and the following
-;;;     disclaimer in the documentation and/or other materials
-;;;     provided with the distribution.
-
-;;; THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
-;;; OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-;;; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-;;; ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
-;;; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-;;; DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-;;; GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-;;; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-;;; WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-;;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-;;;;
-;;;; plokami.lisp
-;;;; Lispy interface to libpcap
-;;;;
-;;;; DONE: BPF, inject, dumpfile input, dumpfile output, live capture, nbio.
-;;;;
-;;;; When using multiple pcap instances to capture packets at the same time
-;;;; on different threads, access to *callbacks* and *concurrentpcap*
-;;;; should be synchronized according to implementation. This is currently
-;;;; implemented only for SBCL and CCL.
-;;;;
-;;;; Also, thread safety of libpcap itself is not clearly defined so proceed
-;;;; with caution. Multithreading seems to work fine with the exception of
-;;;; pcap_compile which uses global data structures and should only be called
-;;;; in a synchronized way. This is done in set-filter for SBCL and CCL using
-;;;; *compile-mutex*.
-;;;;
-;;;; Finally, read timeouts on live packet capture are not supported on every
-;;;; platform. This is a libpcap/operating system issue. If in doubt, read
-;;;; the platform specific libpcap documentation and experiment.
-;;;; You should not depend on read timeouts firing (ie. capture returning
-;;;; within timeout) if your code needs to run on multiple operating systems.
-;;;;
-;;;; The best way to make sure that capture does not wait forever, is to use
-;;;; non-blocking mode in combination with your own event notification scheme
-;;;; (select/epoll/kqueue etc). This is also the preferred way to capture
-;;;; packets from multiple pcap instances, threads should be considered as
-;;;; a last resort.
-;;;;
-;;;; How to use:
-;;;;
-;;;; 1) Invoke constructors: make-pcap-live, make-pcap-reader, make-pcap-writer
-;;;;
-;;;; 2) Invoke methods specialized on these three classes mainly
-;;;;    capture, dump, set-non-block, set-filter, stats
-;;;;
-;;;; 3) Invoke stop when finished
-;;;;
-;;;; OR use convenience macros (with-pcap-interface, with-pcap-reader,
-;;;;                            with-pcap-writer) that wrap most of the above
-
-;;;; Examples:
-;;;;
-;;;; Read/process/dump packets in realtime, do not block on capture.
-;;;; Interrupt to cleanup and exit.
+;;; Examples:
+;;
+;; Read/process/dump packets in realtime, do not block on capture.
+;; Interrupt to cleanup and exit.
 
 #|
 (with-pcap-interface (pcap "en0" :promisc t :snaplen 1500 :nbio t)
@@ -84,16 +61,40 @@
        ;; Better to use select/epoll/kqueue on pcap-live-descriptor
        (sleep 0.01))))
 
-
-;;;; Read all packets available in PCAP dumpfile session.pcap and process them.
+;; Read all packets available in PCAP dumpfile session.pcap and process them.
 (with-pcap-reader (reader "session.pcap" :snaplen 1500)
   (capture pcap -1
            (lambda (sec usec caplen len buffer)
              ;; Packet processing code here
              (format t "Packet length: ~A bytes, on the wire: ~A bytes~%"
-                     caplen len))))
-             
+                     caplen len))))             
 |#
+
+;; Copyright (c) 2008 xristos@suspicious.org.  All rights reserved.
+
+;; Redistribution and use in source and binary forms, with or without
+;; modification, are permitted provided that the following conditions
+;; are met:
+
+;;   * Redistributions of source code must retain the above copyright
+;;     notice, this list of conditions and the following disclaimer.
+
+;;   * Redistributions in binary form must reproduce the above
+;;     copyright notice, this list of conditions and the following
+;;     disclaimer in the documentation and/or other materials
+;;     provided with the distribution.
+
+;; THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
+;; OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+;; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+;; ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+;; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+;; DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+;; GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+;; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+;; WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 (in-package :plokami)
@@ -106,16 +107,16 @@
   #-(or sb-thread openmcl-native-threads) (make-hash-table)
   )
 
-(defvar *concurrentpcap* 1)
+(defvar *concurrent-pcap* 1)
 
-(defvar *concurrentpcap-mutex*
+(defvar *concurrent-pcap-mutex*
   #+:sb-thread (sb-thread:make-mutex :name "*concurrent-pcap* lock")
   #+:openmcl-native-threads (ccl:make-lock)
   #-(or :sb-thread :openmcl-native-threads)
   (progn (warn "Locking not done on this implementation. Avoid plokami calls from multiple threads.")
          nil)
   )
-
+ 
 ;; Mutex for pcap_compile which is not thread safe
 (defvar *compile-mutex*
   #+:sb-thread (sb-thread:make-mutex :name "*compile-mutex* lock")
@@ -135,15 +136,15 @@
   (foreign-alloc :char :count +error-buffer-size+ :initial-element 0))
 
 (defun clear-error-buffer (foreign-buffer)
-  "Set `FOREIGN-BUFFER' to the empty string."
+  "Set FOREIGN-BUFFER to the empty string."
   (setf (mem-aref foreign-buffer :char) 0))
 
 (defun error-buffer-to-lisp (foreign-buffer)
-  "Return `FOREIGN-BUFFER' as a lisp string."
+  "Return FOREIGN-BUFFER as a lisp string."
   (foreign-string-to-lisp foreign-buffer))
 
 (defun free-error-buffer (foreign-buffer)
-  "Free memory held by `FOREIGN-BUFFER'."
+  "Free memory held by FOREIGN-BUFFER."
   (foreign-free foreign-buffer))
 
 (defmacro with-error-buffer ((error-buffer) &body body)
@@ -206,7 +207,7 @@
     :initform nil
     :documentation "Foreign pointer to hashkey, passed in callback."))
   (:documentation
-   "Internal class, mixed in packet processing (PCAP-LIVE, PCAP-READER)."))
+   "Internal class, mixed in packet processing (`PCAP-LIVE', `PCAP-READER')."))
 
 
 (defclass pcap-live (pcap-process-mixin pcap-mixin)
@@ -290,13 +291,13 @@ returning within timeout.")
   "Creates and returns a `PCAP-LIVE' instance that is used for live packet
 capture from a network interface.
 
-`INTERFACE' is a string that defines the network interface to use for capture.
-`PROMISC' should be T for promiscuous mode, `NIL' otherwise.
-`NBIO' should be T when non-blocking operation is required. `NIL' otherwise
-(default). `TIMEOUT' should hold read timeout in milliseconds.
+INTERFACE is a string that defines the network interface to use for capture.
+PROMISC should be T for promiscuous mode, NIL otherwise.
+NBIO should be T when non-blocking operation is required. NIL otherwise
+(default). TIMEOUT should hold read timeout in milliseconds.
 0 will wait forever. Only used when in blocking mode and only in platforms
-that support it. No guarantee of actually returning within `TIMEOUT' is made.
-Use non-blocking mode if that is not adequate. `SNAPLEN' should contain the
+that support it. No guarantee of actually returning within TIMEOUT is made.
+Use non-blocking mode if that is not adequate. SNAPLEN should contain the
 number of bytes captured per packet. Default is 68 which should be enough
 for headers. `NETWORK-INTERFACE-ERROR' or `BLOCK-MODE-ERROR' is signaled
 on errors."
@@ -308,7 +309,7 @@ on errors."
   "Creates and returns a `PCAP-READER' instance that is used for reading
 packets from a pcap dumpfile.
 
-`FILE' is the filename to open and read packets from. `SNAPLEN' should contain
+FILE is the filename to open and read packets from. SNAPLEN should contain
 the number of bytes read per packet captured. Default is 68 which should
 be enough for headers. `CAPTURE-FILE-READ-ERROR' is signaled on errors."
   (make-instance 'pcap-reader :file file :snaplen snaplen))
@@ -318,9 +319,9 @@ be enough for headers. `CAPTURE-FILE-READ-ERROR' is signaled on errors."
   "Creates and returns a `PCAP-WRITER' instance that is used to write packets
 to a pcap dumpfile.
 
-`FILE' is the filename to open and write packets to. `DATALINK' should contain
+FILE is the filename to open and write packets to. DATALINK should contain
 a string that represents the datalink protocol of the network interface used
-to capture the packets. Default is Ethernet. `SNAPLEN' should contain the
+to capture the packets. Default is Ethernet. SNAPLEN should contain the
 number of bytes read per packet captured and should be the same as the one
 used when capturing/reading the packets.
 `CAPTURE-FILE-WRITE-ERROR' is signaled on errors."
@@ -359,36 +360,36 @@ used when capturing/reading the packets.
 
 (defgeneric capture (pcap-process-mixin packets handler)
   (:documentation "Only works for `PCAP-LIVE' or `PCAP-READER' instances.
-Captures and processes maximum number of `PACKETS'. Minimum is
+Captures and processes maximum number of PACKETS. Minimum is
 zero. Return 0 when no packets available (did not pass installed packet filter,
 end of file for dumpfiles, read timeout expired before packets arrive,
 no packets available at the time of the call if in non-blocking-mode) otherwise
 return number of packets processed which can be fewer than the maximum given
-in `PACKETS' (due to internal libpcap buffer).
+in PACKETS (due to internal libpcap buffer).
 
-A count of -1 in `PACKETS' processes all the packets received so far when live
+A count of -1 in PACKETS processes all the packets received so far when live
 capturing, or all the packets in a file when reading a pcap dumpfile.
 
 Handler must be a user defined function that accepts five arguments and will
-get called once for every packet received. The values passed are `SEC', `USEC',
-`CAPLEN', `LEN' and `BUFFER'. `SEC' and `USEC' correspond to
+get called once for every packet received. The values passed are SEC, USEC,
+CAPLEN, LEN and BUFFER. SEC and USEC correspond to
 seconds/microseconds since the UNIX epoch (timeval structure in C) at the time
-of capture. `CAPLEN' corresponds to the number of bytes captured. `LEN'
+of capture. CAPLEN corresponds to the number of bytes captured. LEN
 corresponds to the number of bytes originally present in the packet but not
-necessarilly captured. `BUFFER' is a statically allocated byte vector (via
+necessarily captured. BUFFER is a statically allocated byte vector (via
 `CFFI:MAKE-SHAREABLE-BYTE-VECTOR') with the contents of the captured packet.
 This means that successive calls of the packet handler will overwrite its
-contents and if packet persistence is required, contents of `BUFFER' should
-be copied somewhere else from within `HANDLER'.
+contents and if packet persistence is required, contents of BUFFER should
+be copied somewhere else from within HANDLER.
 
-If an error occurs, `PACKET-CAPTURE-ERROR' is signalled for live
+If an error occurs, `PACKET-CAPTURE-ERROR' is signaled for live
 interfaces and `CAPTURE-FILE-READ-ERROR' for pcap dumpfiles (reading).
 For more details on callback handling, see CFFI callback `PCAP-HANDLER'."))
 
 
 (defgeneric set-non-block (pcap-live block-mode)
-  (:documentation "Sets non-blocking mode if `BLOCK-MODE' is `T', blocking
-mode if `NIL'. `BLOCK-MODE-ERROR' is signalled on failure and a restart,
+  (:documentation "Sets non-blocking mode if BLOCK-MODE is T, blocking
+mode if NIL. `BLOCK-MODE-ERROR' is signaled on failure and a restart,
 `CONTINUE-BLOCK-MODE' is installed, that can be invoked to continue."))
 
 (defgeneric stats (pcap-live)
@@ -396,33 +397,33 @@ mode if `NIL'. `BLOCK-MODE-ERROR' is signalled on failure and a restart,
 to the time of the call for live interface capture only. Statistics are
 returned as multiple values and correspond to packets received,
 packets dropped and packets dropped by interface (in this order).
-`NETWORK-INTERFACE-ERROR' is signalled on failure."))
+`NETWORK-INTERFACE-ERROR' is signaled on failure."))
 
 
 (defgeneric inject (pcap-live buffer &key length)
-  (:documentation "Injects `LENGTH' bytes to a live pcap interface
-(size of `BUFFER' if ommitted). Return number of bytes injected on success.
-For performance reasons `BUFFER' should be a byte vector allocated with
-`CFFI:MAKE-SHAREABLE-BYTE-VECTOR'. `PACKET-INJECT-ERROR' is signalled on failure."))
+  (:documentation "Injects LENGTH bytes to a live pcap interface
+(size of BUFFER if omitted). Return number of bytes injected on success.
+For performance reasons BUFFER should be a byte vector allocated with
+`CFFI:MAKE-SHAREABLE-BYTE-VECTOR'. `PACKET-INJECT-ERROR' is signaled on failure."))
 
 
 (defgeneric set-filter (pcap-process-mixin string)
   (:documentation "Sets a packet filter on a `PCAP-LIVE' or `PCAP-READER'
-instance. The filter should be given as a BPF expression in `STRING'.
-`PACKET-FILTER-ERROR' is signalled on failure. A restart, `CONTINUE-NO-FILTER'
+instance. The filter should be given as a bpf expression in STRING.
+`PACKET-FILTER-ERROR' is signaled on failure. A restart, `CONTINUE-NO-FILTER'
 is installed that can be invoked to continue on error."))
 
 
 (defgeneric dump (pcap-writer data sec usec &key length origlength)
-  (:documentation "Writes contents of byte vector `DATA' to `PCAP-WRITER'
-instance (which corresponds to a pcap dumpfile). `LENGTH' is the number of bytes
-to write and is set to the size of `DATA' when omitted. `ORIGLENGTH' should be
+  (:documentation "Writes contents of byte vector DATA to `PCAP-WRITER'
+instance (which corresponds to a pcap dumpfile). LENGTH is the number of bytes
+to write and is set to the size of DATA when omitted. ORIGLENGTH should be
 set to the number of bytes originally present in the packet and is set to
-`LENGTH' when omitted. `SEC' and `USEC' should be set to seconds/microseconds
+LENGTH when omitted. SEC and USEC should be set to seconds/microseconds
 since the UNIX epoch at the time of capture (timeval structure in C).
-If you are using your own source buffer (instead of the one used by `PLOKAMI'),
-it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'. As `LIBPCAP'
-does not return useful value on pcap_dump() no `PLOKAMI' specific conditions,
+If you are using your own source buffer (instead of the one used by PLOKAMI),
+it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'. As LIBPCAP
+does not return useful value on pcap_dump() no PLOKAMI specific conditions,
 beyond simple assertions of argument checks, are raised by this function."))
 
 
@@ -436,10 +437,10 @@ beyond simple assertions of argument checks, are raised by this function."))
   (with-slots (live hashkey hashkey-pointer) cap
     (when live
       #+:sb-thread
-      (sb-thread:with-mutex (*concurrentpcap-mutex*)
+      (sb-thread:with-mutex (*concurrent-pcap-mutex*)
           (remhash hashkey *callbacks*))
       #+:openmcl-native-threads
-      (ccl:with-lock-grabbed (*concurrentpcap-mutex*)
+      (ccl:with-lock-grabbed (*concurrent-pcap-mutex*)
         (remhash hashkey *callbacks*))
       #-(or sb-thread openmcl-native-threads)
       (remhash hashkey *callbacks*)
@@ -483,14 +484,14 @@ beyond simple assertions of argument checks, are raised by this function."))
           (setf datalink (car dlink)))
         (setf buffer (cffi:make-shareable-byte-vector snaplen)
               live t)
-        (flet ((hash-inst () (setf (gethash *concurrentpcap* *callbacks*) cap
-                                   hashkey *concurrentpcap*)
-                          (incf *concurrentpcap*)))
+        (flet ((hash-inst () (setf (gethash *concurrent-pcap* *callbacks*) cap
+                                   hashkey *concurrent-pcap*)
+                          (incf *concurrent-pcap*)))
           ;; Hash pcap instance for callback discovery
           #+:sb-thread
-          (sb-thread:with-mutex (*concurrentpcap-mutex*) (hash-inst))
+          (sb-thread:with-mutex (*concurrent-pcap-mutex*) (hash-inst))
           #+:openmcl-native-threads
-          (ccl:with-lock-grabbed (*concurrentpcap-mutex*) (hash-inst))
+          (ccl:with-lock-grabbed (*concurrent-pcap-mutex*) (hash-inst))
           #-(or sb-thread openmcl-native-threads) (hash-inst)
           )
         (setf hashkey-pointer (foreign-alloc :int :initial-element hashkey))
@@ -522,14 +523,14 @@ beyond simple assertions of argument checks, are raised by this function."))
                 major (%pcap-major-version pcap_t)
                 minor (%pcap-minor-version pcap_t)
                 live t)
-          (flet ((hash-inst () (setf (gethash *concurrentpcap* *callbacks*) cap
-                                     hashkey *concurrentpcap*)
-                            (incf *concurrentpcap*)))
+          (flet ((hash-inst () (setf (gethash *concurrent-pcap* *callbacks*) cap
+                                     hashkey *concurrent-pcap*)
+                            (incf *concurrent-pcap*)))
             ;; Hash pcap instance for callback discovery
             #+:sb-thread
-            (sb-thread:with-mutex (*concurrentpcap-mutex*) (hash-inst))
+            (sb-thread:with-mutex (*concurrent-pcap-mutex*) (hash-inst))
             #+:openmcl-native-threads
-            (ccl:with-lock-grabbed (*concurrentpcap-mutex*) (hash-inst))
+            (ccl:with-lock-grabbed (*concurrent-pcap-mutex*) (hash-inst))
             #-(or sb-thread openmcl-native-threads) (hash-inst)
             )
           (setf hashkey-pointer
@@ -714,7 +715,7 @@ beyond simple assertions of argument checks, are raised by this function."))
 ;; Messy but it works
 (defun find-all-devs ()
   "Return a list of all network devices that can be opened for capture. Result
-list mirrors layout explained in pcap_findalldevs(3). `NIL' is returned when
+list mirrors layout explained in pcap_findalldevs(3). NIL is returned when
 no interfaces are available, possibly due to permission issues.
 Signals `NETWORK-INTERFACE-ERROR' on errors."
   (with-error-buffer (eb)
@@ -792,32 +793,32 @@ Signals `NETWORK-INTERFACE-ERROR' on errors."
            (return lis))))))
 
 
-(defmacro with-pcap-interface ((pcaplive iface &rest options) &body body)
-  "Call `MAKE-PCAP-LIVE' using `IFACE', `OPTIONS' as arguments and store
-the resulting instance in `PCAPLIVE'. Forms in body are wrapped in an
+(defmacro with-pcap-interface ((live iface &rest options) &body body)
+  "Call `MAKE-PCAP-LIVE' using IFACE, OPTIONS as arguments and store
+the resulting instance in LIVE. Forms in body are wrapped in an
 `UNWIND-PROTECT' form that takes care of deallocating resources on
 error and also returns packet capture statistics when possible. A restart
-is also automatically invoked when `PACKET-FILTER-ERROR' is signalled,
+is also automatically invoked when `PACKET-FILTER-ERROR' is signaled,
 skipping the filter setup."
-  `(let ((,pcaplive (make-pcap-live ,iface ,@options)))
+  `(let ((,live (make-pcap-live ,iface ,@options)))
      (unwind-protect
           (handler-bind ((packet-filter-error
                           #'(lambda (c)
                               (declare (ignore c))
                               (invoke-restart 'continue-no-filter))))
             (progn ,@body))
-       (when (pcap-live-alive-p ,pcaplive)
-         (multiple-value-bind (recv dropped) (stats ,pcaplive)
+       (when (pcap-live-alive-p ,live)
+         (multiple-value-bind (recv dropped) (stats ,live)
            (format t "~%~A packets received, ~A dropped~%"
                    recv dropped)))
-       (stop ,pcaplive))))
+       (stop ,live))))
 
 
 (defmacro with-pcap-reader ((reader file &rest options) &body body)
-  "Call `MAKE-PCAP-READER' using `FILE', `OPTIONS' as arguments and store the
-resulting instance in `READER'. Forms in body are wrapped in an `UNWIND-PROTECT'
+  "Call `MAKE-PCAP-READER' using FILE, OPTIONS as arguments and store the
+resulting instance in READER. Forms in body are wrapped in an UNWIND-PROTECT
 form that takes care of deallocating resources on error. A restart is also
-automatically invoked when `PACKET-FILTER-ERROR' is signalled,
+automatically invoked when `PACKET-FILTER-ERROR' is signaled,
 skipping the filter setup."
   `(let ((,reader (make-pcap-reader ,file ,@options)))
      (unwind-protect
@@ -830,8 +831,8 @@ skipping the filter setup."
 
 
 (defmacro with-pcap-writer ((writer file &rest options) &body body)
-  "Call `MAKE-PCAP-WRITER' using `FILE', `OPTIONS' as arguments and store
-the resulting instance in `WRITER'. Forms in body are wrapped in an
+  "Call `MAKE-PCAP-WRITER' using FILE, OPTIONS as arguments and store
+the resulting instance in WRITER. Forms in body are wrapped in an
 `UNWIND-PROTECT' form that takes care of deallocating resources on error."
   `(let ((,writer (make-pcap-writer ,file ,@options)))
      (unwind-protect
