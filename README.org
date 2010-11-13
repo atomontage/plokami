@@ -1,27 +1,26 @@
-* Abstract
 PLOKAMI is a lispy interface to libpcap built on top of a CFFI portability
 layer. Complete bindings to every function in libpcap are in pcap.lisp
 although not exported. A higher level lisp-like interface is implemented in
 plokami.lisp and documented here.
 
-* Features
+*Features*
 Realtime network packet capture, injection, PCAP dumpfile
 reading/writing, BPF, timeouts and operation in non-blocking mode.  Also,
 full support for Windows through winpcap but see here. The library has been
 tested on SBCL (linux/darwin), ClozureCL and LispWorks (darwin/win32) but
 should work on every platform that CFFI supports.
 
-* Performance
+*Performance*
 Minimal/non-existent overhead over plain libpcap. Low memory
 use with very few dynamic allocations. No GC delays/packet loss due to
 garbage collection.
 
-* License
+*License*
 The code comes with a BSD-style license so you can basically do with it
 whatever you want.
 
-* Documentation
-http://atomontage.github.com/plokami
+*Documentation*
+[[http://atomontage.github.com/plokami]]
 
-* Author
-xristos (AT) suspicious (DOT) org
+*Author*
+/xristos (AT) suspicious (DOT) org/
