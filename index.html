@@ -1,88 +1,813 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"> 
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <title>
+      PLOKAMI - Common Lisp PCAP Interface
+    </title>
+    <style type="text/css">
+      /*<![CDATA[*/
+      body { margin: 60px 100px; font-family: "Trebuchet MS", Verdana, sans-serif; max-width: 60em;}
+      pre.code { 
+      padding:5px; font-size: 1.1em; border: 1px solid #000000; background: #000000; color: #ccc; }
+      code {font-size: 1.1em;}
+      h2 { border-bottom: 2px solid #000000;}
+      h3, h4 { text-decoration: underline; }
+      ul {list-style-type: disc;}
+      a { text-decoration: none; padding: 1px 2px 1px 2px; }
+      a:visited { text-decoration: none; padding: 1px 2px 1px 2px; }
+      a:hover { text-decoration: none; padding: 1px 1px 1px 1px; border: 1px solid #000000; } 
+      a:focus { text-decoration: none; padding: 1px 2px 1px 2px; border: none; }
+      a.none { text-decoration: none; padding: 0; }
+      a.none:visited { text-decoration: none; padding: 0; } 
+      a.none:hover { text-decoration: none; border: none; padding: 0; } 
+      a.none:focus { text-decoration: none; border: none; padding: 0; } 
+      a.noborder { text-decoration: none; padding: 0; } 
+      a.noborder:visited { text-decoration: none; padding: 0; } 
+      a.noborder:hover { text-decoration: none; border: none; padding: 0; } 
+      a.noborder:focus { text-decoration: none; border: none; padding: 0; } 
+      /*]]>*/
+    </style>
+  </head>
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <body bgcolor="white">
+    <h1> PLOKAMI - Common Lisp PCAP Interface </h1>
 
-	<title>atomontage/plokami @ GitHub</title>
-	
-	<style type="text/css">
-		body {
-  		margin-top: 1.0em;
-  		background-color: #87b7b8;
-		  font-family: "Helvetica,Arial,FreeSans";
-  		color: #000000;
-    }
-    #container {
-      margin: 0 auto;
-      width: 700px;
-    }
-		h1 { font-size: 3.8em; color: #784847; margin-bottom: 3px; }
-		h1 .small { font-size: 0.4em; }
-		h1 a { text-decoration: none }
-		h2 { font-size: 1.5em; color: #784847; }
-    h3 { text-align: center; color: #784847; }
-    a { color: #784847; }
-    .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
-    .download { float: right; }
-		pre { background: #000; color: #fff; padding: 15px;}
-    hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
-    .footer { text-align:center; padding-top:30px; font-style: italic; }
-	</style>
-	
-</head>
+      <br />&nbsp;<br />
+      <h2><a name="abstract" class="none">Abstract</a></h2>
+      PLOKAMI is a lispy interface to <a href="http://www.tcpdump.org/">libpcap</a>
+      built on top of a <a href="http://common-lisp.net/project/cffi/">CFFI</a>
+      portability layer. Complete bindings to every function in libpcap are
+      in <strong>pcap.lisp</strong> although not exported. A higher level lisp-like
+      interface is implemented in <strong>plokami.lisp</strong> and documented here.
+      <p>
+        <strong>Supported:</strong> Realtime network packet capture, injection,
+        PCAP dumpfile reading/writing, BPF, timeouts and operation in non-blocking mode.
+        <br />Also, full support for Windows through <a href="http://www.winpcap.org">winpcap</a>
+        but see <a href="http://www.mail-archive.com/winpcap-users@winpcap.polito.it/msg02414.html">here</a>. The library has been tested on <a href="http://www.sbcl.org">SBCL</a>
+        (linux/darwin), <a href="http://clozure.com/clozurecl.html">ClozureCL</a> and
+        <a href="http://www.lispworks.com">LispWorks</a> (darwin/win32) but should work on every platform
+        that <a href="http://common-lisp.net/project/cffi/">CFFI</a> supports.
+      </p>
+      <p>
+        <strong>Performance:</strong> Minimal/non-existent overhead over plain libpcap.
+        Low memory use with very few dynamic allocations. No GC delays/packet loss due to garbage collection.
+      </p>
+      <p>
+        <strong>NOTE:</strong> Read timeouts, non-blocking mode operation and the
+        use of select/epoll/kqueue on the live interface file descriptor (as returned
+        by <a href="#pcap-live-descriptor"><code>pcap-live-descriptor</code></a>)
+        depend on support from operating system/libpcap. If things involving these
+        operations do not work as they should, consult libpcap documentation
+        and platform specific notes.
+        <br /><br />
+        The file descriptor
+        can not be used with <strong>kqueue</strong> on OSX (as of 10.5)
+        although the same file descriptor works fine with <strong>select</strong>.
+        Recent FreeBSD versions have fixed this and <strong>kqueue</strong> works
+        with no issues on these platforms.
+      </p>
+      <p>
+        The code comes with a
+        <a href="http://www.opensource.org/licenses/bsd-license.php">BSD-style
+      license</a> so you can basically do with it whatever you want.
+      </p>
 
-<body>
-  <a href="http://github.com/atomontage/plokami"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+    <br />&nbsp;<br /><h2><a class="none" name="contents">Contents</a></h2>
 
-  <div id="container">
+    <ul>
+      <li><a href="#download">Download</a></li>
+      <li><a href="#examples">Examples</a></li>
+      <li><a href="#dictionary">The PLOKAMI dictionary</a>
+<ul><li><a href="#special-var">Special Variables</a>
+<ul>
+<li><a href="#pcap-version"><code>*pcap-version*</code></a></li>
+</ul></li></ul>
+<ul><li><a href="#function">Constructors &amp; Functions</a>
+<ul>
+<li><a href="#make-pcap-writer"><code>make-pcap-writer</code></a></li>
+<li><a href="#make-pcap-reader"><code>make-pcap-reader</code></a></li>
+<li><a href="#make-pcap-live"><code>make-pcap-live</code></a></li>
+<li><a href="#find-all-devs"><code>find-all-devs</code></a></li>
+</ul></li></ul>
+<ul><li><a href="#macro">Macros</a>
+<ul>
+<li><a href="#with-pcap-writer"><code>with-pcap-writer</code></a></li>
+<li><a href="#with-pcap-reader"><code>with-pcap-reader</code></a></li>
+<li><a href="#with-pcap-interface"><code>with-pcap-interface</code></a></li>
+</ul></li></ul>
+<ul><li><a href="#generic-function">Generic functions</a>
+<ul>
+<li><a href="#stop"><code>stop</code></a></li>
+<li><a href="#stats"><code>stats</code></a></li>
+<li><a href="#set-non-block"><code>set-non-block</code></a></li>
+<li><a href="#set-filter"><code>set-filter</code></a></li>
+<li><a href="#inject"><code>inject</code></a></li>
+<li><a href="#dump"><code>dump</code></a></li>
+<li><a href="#capture"><code>capture</code></a></li>
+</ul></li></ul>
+<ul><li><a href="#reader">Readers</a>
+<ul>
+<li><a href="#pcap-writer-snaplen"><code>pcap-writer-snaplen</code></a></li>
+<li><a href="#pcap-writer-file"><code>pcap-writer-file</code></a></li>
+<li><a href="#pcap-writer-datalink"><code>pcap-writer-datalink</code></a></li>
+<li><a href="#pcap-writer-alive-p"><code>pcap-writer-alive-p</code></a></li>
+<li><a href="#pcap-reader-swapped-p"><code>pcap-reader-swapped-p</code></a></li>
+<li><a href="#pcap-reader-snaplen"><code>pcap-reader-snaplen</code></a></li>
+<li><a href="#pcap-reader-minor"><code>pcap-reader-minor</code></a></li>
+<li><a href="#pcap-reader-major"><code>pcap-reader-major</code></a></li>
+<li><a href="#pcap-reader-file"><code>pcap-reader-file</code></a></li>
+<li><a href="#pcap-reader-datalink"><code>pcap-reader-datalink</code></a></li>
+<li><a href="#pcap-reader-alive-p"><code>pcap-reader-alive-p</code></a></li>
+<li><a href="#pcap-live-timeout"><code>pcap-live-timeout</code></a></li>
+<li><a href="#pcap-live-snaplen"><code>pcap-live-snaplen</code></a></li>
+<li><a href="#pcap-live-promisc-p"><code>pcap-live-promisc-p</code></a></li>
+<li><a href="#pcap-live-interface"><code>pcap-live-interface</code></a></li>
+<li><a href="#pcap-live-descriptor"><code>pcap-live-descriptor</code></a></li>
+<li><a href="#pcap-live-datalink"><code>pcap-live-datalink</code></a></li>
+<li><a href="#pcap-live-alive-p"><code>pcap-live-alive-p</code></a></li>
+<li><a href="#plokami-error-text"><code>plokami-error-text</code></a></li>
 
-    <div class="download">
-      <a href="http://github.com/atomontage/plokami/zipball/master">
-        <img border="0" width="90" src="http://github.com/images/modules/download/zip.png"></a>
-      <a href="http://github.com/atomontage/plokami/tarball/master">
-        <img border="0" width="90" src="http://github.com/images/modules/download/tar.png"></a>
-    </div>
+</ul></li></ul>
+<ul><li><a href="#condition">Conditions</a>
+<ul>
+<li><a href="#plokami-error"><code>plokami-error</code></a></li>
+<li><a href="#packet-inject-error"><code>packet-inject-error</code></a></li>
+<li><a href="#packet-filter-error"><code>packet-filter-error</code></a></li>
+<li><a href="#packet-capture-error"><code>packet-capture-error</code></a></li>
+<li><a href="#network-interface-error"><code>network-interface-error</code></a></li>
+<li><a href="#capture-file-write-error"><code>capture-file-write-error</code></a></li>
+<li><a href="#capture-file-read-error"><code>capture-file-read-error</code></a></li>
+<li><a href="#block-mode-error"><code>block-mode-error</code></a></li>
+</ul></li></ul>
+<ul><li><a href="#restart">Restarts</a>
+        <ul>
+            <li><a href="#continue-block-mode"><code>continue-block-mode</code></a></li>
+            <li><a href="#continue-no-filter"><code>continue-no-filter</code></a></li>
+</ul></li></ul>
 
-    <h1><a href="http://github.com/atomontage/plokami">plokami</a>
-      <span class="small">by <a href="http://github.com/atomontage">atomontage</a></span></h1>
+      </li>
+      <li><a href="#ack">Acknowledgments</a></li>
+    </ul>
+    
+    <br />&nbsp;<br /><h2><a class="none" name="download">Download</a></h2>
+    <p> The latest version is available from <a href="http://github.com/atomontage/plokami/">git</a> 
+    repository. You can also install it with <a href="http://www.quicklisp.org">Quicklisp</a>.</p>
 
-    <div class="description">
-      Common Lisp PCAP Interface
-    </div>
+    <p>For feature-requests, questions, patches email me at
+    <strong>xristos (AT) suspicious (DOT) org</strong>.</p>
+    <h2><a class="none" name="examples">Examples</a></h2>
+    <p> List interfaces (addresses will not show up correctly on Win32, patches
+    welcome) </p>
+    <p>If <a href="#find-all-devs"><code>find-all-devs</code></a>
+    returns <b><i>NIL</i></b>, make sure you have appropriate permissions for
+    packet capture (read access on /dev/bpf* devices for OSX/BSD, root/CAP_NET_RAW on Linux).</p>
+    
+    <pre class='code'>
+<span style="color: #008ed1;">PLOKAMI&gt; </span><span style="color: #ffffff;">(find-all-devs)</span>
+<span style="color: #b9FC6D;">(("lo0" NIL 1
+  (((:ADDR :AF_INET6 "::1")
+    (:NETMASK :AF_INET6 "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"))
+   ((:ADDR :AF_INET "127.0.0.1") (:NETMASK :AF_INET "255.0.0.0"))
+   ((:ADDR :AF_INET6 "fe80::1") (:NETMASK :AF_INET6 "ffff:ffff:ffff:ffff::"))
+   ((:ADDR :AF_LINK "lo0"))))
+ ("en1" NIL 0
+  (((:ADDR :AF_INET "192.168.1.64") (:NETMASK :AF_INET "255.255.255.0")
+    (:BROADADDR :AF_INET "192.168.1.255"))
+   ((:ADDR :AF_LINK "en1:0.1e.52.70.2f.9e"))))
+ ("en0" NIL 0 (((:ADDR :AF_LINK "en0:0.1b.23.cc.ea.50"))))
+ ("fw0" NIL 0 (((:ADDR :AF_LINK "fw0:0.1d.41.cf.fe.78.b4.ee")))))</span></pre>
 
-    <h2>Authors</h2>
-<p>xristos (xristos@suspicious.org)<br/><br/>      </p>
-<h2>Contact</h2>
-<p>xristos (xristos@suspicious.org)<br/>      </p>
+Read packets from the network in non-blocking mode, filter for <strong>IP</strong>, process and write them out to a PCAP dumpfile. Interrupt lisp to clean up and exit.
+
+<pre class='code'>
+(<span style="color: #ff5555;">with-pcap-interface</span> (pcap <span style="color: #ffff55;">"en0"</span> <span style="color: #5555ff;">:promisc</span> t <span style="color: #5555ff;">:snaplen</span> 1500 <span style="color: #5555ff;">:nbio</span> t)
+  (<span style="color: #ff5555;">with-pcap-writer</span> (writer <span style="color: #ffff55;">"session.pcap"</span> <span style="color: #5555ff;">:snaplen</span> 1500 <span style="color: #5555ff;">:datalink</span>
+                            (pcap-live-datalink pcap))
+    (set-filter pcap <span style="color: #ffff55;">"ip"</span>)
+    (<span style="color: #ff5555;">loop</span>
+       (capture pcap -1
+                (<span style="color: #ff5555;">lambda</span> (sec usec caplen len buffer)
+                    (dump writer buffer sec usec <span style="color: #5555ff;">:length</span> caplen
+                          <span style="color: #5555ff;">:origlength</span> len)
+                    (format t <span style="color: #ffff55;">"Packet length: ~A bytes, on the wire: ~A bytes~%"</span>
+                            caplen len)))
+       <span style="color: #008ed1;">;; </span><span style="color: #008ed1;">Better to use select/epoll/kqueue on pcap-live-descriptor
+</span>       (sleep 0.01))))</pre>
+
+Read all packets available in PCAP dumpfile <i>session.pcap</i> and process them.
+
+<pre class='code'>
+(<span style="color: #ff5555;">with-pcap-reader</span> (reader <span style="color: #ffff55;">"session.pcap"</span> <span style="color: #5555ff;">:snaplen</span> 1500)
+  (capture pcap -1
+           (<span style="color: #ff5555;">lambda</span> (sec usec caplen len buffer)
+             <span style="color: #008ed1;">;; </span><span style="color: #008ed1;">Packet processing code here
+</span>             (format t <span style="color: #ffff55;">"Packet length: ~A bytes, on the wire: ~A bytes~%"</span>
+                     caplen len))))</pre>
+
+In all cases, BUFFER vector used in callback <i>handler</i> supplied to <a href="#capture"><code>capture</code></a> is 
+allocated once per pcap instance and is overwritten every time <a href="#capture"><code>capture</code></a>
+gets called. If packet persistence is required, BUFFER contents should be copied
+before <a href="#capture"><code>capture</code></a> gets called again.
+
+<p>
+Under win32/winpcap, <i>SNAPLEN</i> only takes effect when a filter is used.
+It is therefore advised that an empty filter be installed, <strong>(set-filter instance "")</strong>, when capturing on this
+platform. Also see <a href="http://www.mail-archive.com/winpcap-users@winpcap.polito.it/msg02414.html">here</a>.
+</p>
 
 
-    <h2>Download</h2>
-    <p>
-      You can download this project in either
-      <a href="http://github.com/atomontage/plokami/zipball/master">zip</a> or
-      <a href="http://github.com/atomontage/plokami/tarball/master">tar</a> formats.
+    <br />&nbsp;<br /><h2><a class="none" name="dictionary">The PLOKAMI dictionary</a></h2><br /><h3><a class="none" name="special-var">Special Variables</a></h3>
+
+
+    <!-- Entry for *PCAP-VERSION* -->
+    <p><br />[Special variable]<br /><a class="none" name="pcap-version"><b>*pcap-version*</b></a>
     </p>
-    <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
-      by running:
-      <pre>$ git clone git://github.com/atomontage/plokami</pre>
+    <blockquote><br />
+
+Version of native libpcap library.
+
+    </blockquote>
+    <!-- End of entry for *PCAP-VERSION* -->
+<br /><h3><a class="none" name="function">Constructors &amp; Functions</a></h3>
+
+
+    <!-- Entry for MAKE-PCAP-WRITER -->
+    <p><br />[Function]<br /><a class="none" name="make-pcap-writer"><b>make-pcap-writer</b> <i>file <tt>&amp;key</tt> datalink snaplen</i> =&gt; <i>pcap-writer</i></a>
     </p>
+    <blockquote>
 
-    <div class="footer">
-      get the source code on GitHub : <a href="http://github.com/atomontage/plokami">atomontage/plokami</a>
-    </div>
+<p>Creates and returns a <b><i>pcap-writer</i></b> instance that is used to write packets
+to a pcap dumpfile.</p>
 
-  </div>
+<b><i>file</i></b> is the filename to open and write packets to. <br /><b><i>datalink</i></b> should contain
+a string that represents the datalink protocol of the network interface used
+to capture the packets. Default is "EN10MB" for Ethernet. See <b>*supported-datalinks*</b> in <b>pcap.lisp</b> for more.<br />
+<b><i>snaplen</i></b> should contain the number of bytes read per packet captured and should be the same as the one
+used when capturing/reading the packets. <a href="#capture-file-write-error"><code>CAPTURE-FILE-WRITE-ERROR</code></a> is signaled on errors.
 
-  <script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-</script>
-<script type="text/javascript">
-try {
-var pageTracker = _gat._getTracker("UA-19685946-1");
-pageTracker._trackPageview();
-} catch(err) {}</script>
+    </blockquote>
+    <!-- End of entry for MAKE-PCAP-WRITER -->
+
+
+    <!-- Entry for MAKE-PCAP-READER -->
+    <p><br />[Function]<br /><a class="none" name="make-pcap-reader"><b>make-pcap-reader</b> <i>file <tt>&amp;key</tt> snaplen</i> =&gt; <i>pcap-reader</i></a>
+    </p>
+    <blockquote>
+
+<p>Creates and returns a <b><i>pcap-reader</i></b> instance that is used for reading
+packets from a pcap dumpfile.</p>
+
+<b><i>file</i></b> is the filename to open and read packets from.<br /><b><i>snaplen</i></b> should contain
+the number of bytes read per packet captured. Default is 68 which should
+be enough for headers. <a href="#capture-file-read-error"><code>CAPTURE-FILE-READ-ERROR</code></a> is signaled on errors.
+
+    </blockquote>
+    <!-- End of entry for MAKE-PCAP-READER -->
+
+
+    <!-- Entry for MAKE-PCAP-LIVE -->
+    <p><br />[Function]<br /><a class="none" name="make-pcap-live"><b>make-pcap-live</b> <i>interface <tt>&amp;key</tt> promisc nbio timeout snaplen</i> =&gt; <i>pcap-live</i></a>
+    </p>
+    <blockquote>
+
+<p>Creates and returns a <b><i>pcap-live</i></b> instance that is used for live packet
+capture from a network interface.</p>
+
+<b><i>interface</i></b> is a string that defines the network interface to use for capture.<br />
+<b><i>promisc</i></b> should be <b><i>T</i></b> for promiscuous mode, <b><i>NIL</i></b> otherwise.<br />
+<b><i>nbio</i></b> should be <b><i>T</i></b> when non-blocking operation is required. <b><i>NIL</i></b> otherwise
+(default).<br /><b><i>timeout</i></b> should hold read timeout in milliseconds (default is 50).
+0 will wait forever. Only used when in blocking mode and only in platforms
+that support it. No guarantee of actually returning within <b><i>timeout</i></b> is made.
+Use non-blocking mode if that is not adequate.<br /><b><i>snaplen</i></b> should contain the
+number of bytes captured per packet. Default is 68 which should be enough
+for headers. <a href="#network-interface-error"><code>NETWORK-INTERFACE-ERROR</code></a> or
+<a href="#block-mode-error"><code>BLOCK-MODE-ERROR</code></a> is signaled on errors.
+
+    </blockquote>
+    <!-- End of entry for MAKE-PCAP-LIVE -->
+
+
+    <!-- Entry for FIND-ALL-DEVS -->
+    <p><br />[Function]<br /><a class="none" name="find-all-devs"><b>find-all-devs</b> <i></i> =&gt; <i>list of devices/addresses</i></a>
+    </p>
+    <blockquote><br />
+
+Return a list of all network devices that can be opened for capture. Result
+list mirrors layout explained in pcap_findalldevs(3). <b><i>NIL</i></b> is returned when
+no interfaces are available, possibly due to permission issues.<br />
+Signals <a href="#network-interface-error"><code>NETWORK-INTERFACE-ERROR</code></a> on errors.
+
+    </blockquote>
+    <!-- End of entry for FIND-ALL-DEVS -->
+
+<br /><h3><a class="none" name="macro">Macros</a></h3>
+
+    <!-- Entry for WITH-PCAP-WRITER -->
+    <p><br />[Macro]<br /><a class="none" name="with-pcap-writer"><b>with-pcap-writer</b> <i>(writer file <tt>&amp;rest</tt> options) <tt>&amp;body</tt> body</i> =&gt; <i>result</i></a>
+    </p>
+    <blockquote><br />
+
+Call <a href="#make-pcap-writer"><code>MAKE-PCAP-WRITER</code></a> using <b><i>file</i></b>, <b><i>options</i></b> as arguments and store
+the resulting instance in <b><i>writer</i></b>. Forms in body are wrapped in an
+<b><i>unwind-protect</i></b> form that takes care of deallocating resources on error.
+
+    </blockquote>
+    <!-- End of entry for WITH-PCAP-WRITER -->
+
+
+    <!-- Entry for WITH-PCAP-READER -->
+    <p><br />[Macro]<br /><a class="none" name="with-pcap-reader"><b>with-pcap-reader</b> <i>(reader file <tt>&amp;rest</tt> options) <tt>&amp;body</tt> body</i> =&gt; <i>result</i></a>
+    </p>
+    <blockquote><br />
+
+Call <a href="#make-pcap-reader"><code>MAKE-PCAP-READER</code></a> using <b><i>file</i></b>, <b><i>options</i></b> as arguments and store the
+resulting instance in <b><i>reader</i></b>. Forms in body are wrapped in an <b><i>unwind-protect</i></b>
+form that takes care of deallocating resources on error. A restart is also
+automatically invoked when <a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a> is signaled,
+skipping the filter setup.
+
+    </blockquote>
+    <!-- End of entry for WITH-PCAP-READER -->
+
+
+    <!-- Entry for WITH-PCAP-INTERFACE -->
+    <p><br />[Macro]<br /><a class="none" name="with-pcap-interface"><b>with-pcap-interface</b> <i>(live iface <tt>&amp;rest</tt> options) <tt>&amp;body</tt> body</i> =&gt; <i>result</i></a>
+    </p>
+    <blockquote><br />
+
+Call <a href="#make-pcap-live"><code>MAKE-PCAP-LIVE</code></a> using <b><i>iface</i></b>, <b><i>options</i></b> as arguments and store
+the resulting instance in <b><i>live</i></b>. Forms in body are wrapped in an
+<b><i>unwind-protect</i></b> form that takes care of deallocating resources on
+error and also returns packet capture statistics when possible. A restart
+is also automatically invoked when <a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a> is signaled,
+skipping the filter setup.
+
+    </blockquote>
+    <!-- End of entry for WITH-PCAP-INTERFACE -->
+
+<br /><h3><a class="none" name="generic-function">Generic functions</a></h3>
+
+
+    <!-- Entry for STOP -->
+    <p><br />[Generic function]<br /><a class="none" name="stop"><b>stop</b> <i>pcap-mixin</i> =&gt; <i>result</i></a>
+    </p>
+    <blockquote><br />
+
+Deallocates resources for <b><i>pcap-live</i></b>, <b><i>pcap-reader</i></b>,
+<b><i>pcap-writer</i></b> instance.
+
+    </blockquote>
+    <!-- End of entry for STOP -->
+
+
+    <!-- Entry for STATS -->
+    <p><br />[Generic function]<br /><a class="none" name="stats"><b>stats</b> <i>pcap-live</i> =&gt; <i>capture statistics</i></a>
+    </p>
+    <blockquote><br />
+
+Returns packet capture statistics from the start of the run
+to the time of the call for live interface capture only. Statistics are
+returned as multiple values and correspond to packets received,
+packets dropped and packets dropped by interface (in this order).
+<a href="#network-interface-error"><code>NETWORK-INTERFACE-ERROR</code></a> is signaled on failure.
+
+    </blockquote>
+    <!-- End of entry for STATS -->
+
+
+    <!-- Entry for SET-NON-BLOCK -->
+    <p><br />[Generic function]<br /><a class="none" name="set-non-block"><b>set-non-block</b> <i>pcap-live block-mode</i> =&gt; <i>result</i></a>
+    </p>
+    <blockquote><br />
+
+Sets non-blocking mode if <b><i>block-mode</i></b> is <b><i>T</i></b>, blocking
+mode if <b><i>NIL</i></b>. <a href="#block-mode-error"><code>BLOCK-MODE-ERROR</code></a> is signaled on failure and a restart,
+<b><i>continue-block-mode</i></b> is installed, that can be invoked to continue.
+
+    </blockquote>
+    <!-- End of entry for SET-NON-BLOCK -->
+
+
+    <!-- Entry for SET-FILTER -->
+    <p><br />[Generic function]<br /><a class="none" name="set-filter"><b>set-filter</b> <i>pcap-process-mixin string</i> =&gt; <i>result</i></a>
+    </p>
+    <blockquote><br />
+
+Sets a packet filter on a <b><i>pcap-live</i></b> or <b><i>pcap-reader</i></b>
+instance. The filter should be given as a BPF expression in <b><i>string</i></b>.
+<br /><a href="#packet-filter-error"><code>PACKET-FILTER-ERROR</code></a> is signaled on failure. A restart, <b><i>continue-no-filter</i></b>
+is installed that can be invoked to continue on error.
+
+    </blockquote>
+    <!-- End of entry for SET-FILTER -->
+
+    <!-- Entry for INJECT -->
+    <p><br />[Generic function]<br /><a class="none" name="inject"><b>inject</b> <i>pcap-live buffer <tt>&amp;key</tt> length</i> =&gt; <i>integer</i></a>
+    </p>
+    <blockquote><br />
+
+Injects <b><i>length</i></b> bytes to a live pcap interface
+(size of <b><i>buffer</i></b> if omitted). Return number of bytes injected
+on success. For performance reasons <b><i>buffer</i></b> should be a byte vector 
+allocated with <b><i>cffi:make-shareable-byte-vector</i></b>.
+<br /><a href="#packet-inject-error"><code>PACKET-INJECT-ERROR</code></a> is signaled on failure.
+
+    </blockquote>
+    <!-- End of entry for INJECT -->
+
+
+    <!-- Entry for DUMP -->
+    <p><br />[Generic function]<br /><a class="none" name="dump"><b>dump</b> <i>pcap-writer data sec usec <tt>&amp;key</tt> length origlength</i> =&gt; <i>result</i></a>
+    </p>
+    <blockquote>
+
+<p>Writes contents of byte vector <b><i>data</i></b> to <b><i>pcap-writer</i></b>
+instance (which corresponds to a pcap dumpfile).</p> 
+<b><i>length</i></b> is the number of bytes
+to write and is set to the size of <b><i>data</i></b> when omitted.<br />
+<b><i>origlength</i></b> should be
+set to the number of bytes originally present in the packet and is set to
+<b><i>length</i></b> when omitted.<br /><b><i>sec</i></b> and <b><i>usec</i></b> should be set to seconds/microseconds
+since the UNIX epoch at the time of capture (timeval structure in C).
+If you are using your own source buffer (instead of the one used by <b><i>plokami</i></b>),
+it should be allocated with <b><i>cffi:make-shareable-byte-vector</i></b>.
+As <b><i>libpcap</i></b> does not return useful value on pcap_dump() no <b><i>plokami</i></b> 
+specific conditions, beyond simple assertions of argument checks, are raised by this function.
+
+    </blockquote>
+    <!-- End of entry for DUMP -->
+
+
+    <!-- Entry for CAPTURE -->
+    <p><br />[Generic function]<br /><a class="none" name="capture"><b>capture</b> <i>pcap-process-mixin packets handler</i> =&gt; <i>integer</i></a>
+    </p>
+    <blockquote>
+
+<p>Only works for <b><i>pcap-live</i></b> or <b><i>pcap-reader</i></b> instances.
+Captures and processes maximum number of <b><i>packets</i></b>. Minimum is
+zero. Return 0 when no packets available (did not pass installed packet filter,
+end of file for dumpfiles, read timeout expired before packets arrive or no
+packets available at the time of the call if in non-blocking mode) otherwise
+return number of packets processed which can be fewer than the maximum given
+in <b><i>packets</i></b> (due to internal libpcap buffer).</p>
+
+<p>A count of -1 in <b><i>packets</i></b> processes all the packets received so far when live
+capturing, or all the packets in a file when reading a pcap dumpfile.
+Handler must be a user defined function that accepts five arguments and will
+get called once for every packet received. The values passed are <b><i>sec</i></b>, <b><i>usec</i></b>,
+<b><i>caplen</i></b>, <b><i>len</i></b> and <b><i>buffer</i></b>.</p>
+
+<b><i>sec</i></b> and <b><i>usec</i></b> correspond to
+seconds/microseconds since the UNIX epoch (timeval structure in C) at the time
+of capture.<br /><b><i>caplen</i></b> corresponds to the number of bytes captured.<br /><b><i>len</i></b>
+corresponds to the number of bytes originally present in the packet but not
+necessarily captured.<br /><b><i>buffer</i></b> is a statically allocated byte vector
+(via <b><i>cffi:make-shareable-byte-vector</i></b>) with the
+contents of the captured packet. This means that successive calls of the
+packet handler will overwrite its contents and if packet persistence is
+required, contents of <b><i>buffer</i></b> should be copied somewhere else from within
+<b><i>handler</i></b>.
+<p>
+If an error occurs, <a href="#packet-capture-error"><code>PACKET-CAPTURE-ERROR</code></a> is signaled for live
+interfaces and <a href="#capture-file-read-error"><code>CAPTURE-FILE-READ-ERROR</code></a> for pcap dumpfiles. For more details
+on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
+
+    </blockquote>
+    <!-- End of entry for CAPTURE -->
+
+<br /><h3><a class="none" name="reader">Readers</a></h3>
+
+
+    <!-- Entry for PCAP-WRITER-SNAPLEN -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-writer-snaplen"><b>pcap-writer-snaplen</b> <i>pcap-writer</i> =&gt; <i>integer</i></a>
+    </p>
+    <blockquote><br />
+    Number of bytes to write per packet processed.
+
+    </blockquote>
+    <!-- End of entry for PCAP-WRITER-SNAPLEN -->
+
+
+    <!-- Entry for PCAP-WRITER-FILE -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-writer-file"><b>pcap-writer-file</b> <i>pcap-writer</i> =&gt; <i>string</i></a>
+    </p>
+    <blockquote><br />
+    File to write packets to.
+
+    </blockquote>
+    <!-- End of entry for PCAP-WRITER-FILE -->
+
+
+    <!-- Entry for PCAP-WRITER-DATALINK -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-writer-datalink"><b>pcap-writer-datalink</b> <i>pcap-writer</i> =&gt; <i>string</i></a>
+    </p>
+    <blockquote><br />
+    Return string representation of the datalink protocol that is used by <b><i>pcap-writer</i></b> object.
+    </blockquote>
+    <!-- End of entry for PCAP-WRITER-DATALINK -->
+
+
+    <!-- Entry for PCAP-WRITER-ALIVE-P -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-writer-alive-p"><b>pcap-writer-alive-p</b> <i>pcap-writer</i> =&gt; <i>boolean</i></a>
+    </p>
+    <blockquote><br />
+
+    Returns <b><i>T</i></b> when <b><i>pcap-writer</i></b> object is live and can be used for packet dumping.
+    <b><i>NIL</i></b> when <a href="#stop"><code>stop</code></a> has been invoked and object is dead.
+
+    </blockquote>
+    <!-- End of entry for PCAP-WRITER-ALIVE -->
+
+
+    <!-- Entry for PCAP-READER-SWAPPED-P -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-swapped-p"><b>pcap-reader-swapped-p</b> <i>pcap-reader</i> =&gt; <i>boolean</i></a>
+    </p>
+    <blockquote><br />
+    <b><i>T</i></b> if savefile uses different byte order from host system.
+
+
+    </blockquote>
+    <!-- End of entry for PCAP-READER-SWAPPED -->
+
+
+    <!-- Entry for PCAP-READER-SNAPLEN -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-snaplen"><b>pcap-reader-snaplen</b> <i>pcap-reader</i> =&gt; <i>integer</i></a>
+    </p>
+    <blockquote><br />
+
+    Number of bytes to read per packet processed.
+
+    </blockquote>
+    <!-- End of entry for PCAP-READER-SNAPLEN -->
+
+
+    <!-- Entry for PCAP-READER-MINOR -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-minor"><b>pcap-reader-minor</b> <i>pcap-reader</i> =&gt; <i>integer</i></a>
+    </p>
+    <blockquote><br />
+
+    Minor version of savefile.
+    
+    </blockquote>
+    <!-- End of entry for PCAP-READER-MINOR -->
+
+
+    <!-- Entry for PCAP-READER-MAJOR -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-major"><b>pcap-reader-major</b> <i>pcap-reader</i> =&gt; <i>integer</i></a>
+    </p>
+    <blockquote><br />
+
+    Major version of savefile.
+
+    </blockquote>
+    <!-- End of entry for PCAP-READER-MAJOR -->
+
+
+    <!-- Entry for PCAP-READER-FILE -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-file"><b>pcap-reader-file</b> <i>pcap-reader</i> =&gt; <i>string</i></a>
+    </p>
+    <blockquote><br />
+
+    File to read packets from.
+
+    </blockquote>
+    <!-- End of entry for PCAP-READER-FILE -->
+
+
+    <!-- Entry for PCAP-READER-DATALINK -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-datalink"><b>pcap-reader-datalink</b> <i>pcap-reader</i> =&gt; <i>string</i></a>
+    </p>
+    <blockquote><br />
+
+    Return string representation of the datalink protocol used by <b><i>pcap-reader</i></b> object.
+
+    </blockquote>
+    <!-- End of entry for PCAP-READER-DATALINK -->
+
+
+    <!-- Entry for PCAP-READER-ALIVE-P -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-reader-alive-p"><b>pcap-reader-alive-p</b> <i>pcap-reader</i> =&gt; <i>boolean</i></a>
+    </p>
+    <blockquote><br />
+
+    Returns <b><i>T</i></b> when <b><i>pcap-reader</i></b> object is live and can be used for <a href="#capture"><code>capture</code></a>.
+<b><i>NIL</i></b> when <a href="#stop"><code>stop</code></a> has been invoked and object is dead.
+
+    </blockquote>
+    <!-- End of entry for PCAP-READER-ALIVE -->
+
+
+    <!-- Entry for PCAP-LIVE-TIMEOUT -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-timeout"><b>pcap-live-timeout</b> <i>pcap-live</i> =&gt; <i>integer</i></a>
+    </p>
+    <blockquote><br />
+
+    Read timeout in milliseconds. 0 will wait until a packet arrives. Only takes effect in blocking mode/platforms that
+support it. No guarantee of returning within timeout is made.
+
+    </blockquote>
+    <!-- End of entry for PCAP-LIVE-TIMEOUT -->
+
+
+    <!-- Entry for PCAP-LIVE-SNAPLEN -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-snaplen"><b>pcap-live-snaplen</b> <i>pcap-live</i> =&gt; <i>integer</i></a>
+    </p>
+    <blockquote><br />
+    Return snapshot length (how many bytes to capture per packet).
+
+    </blockquote>
+    <!-- End of entry for PCAP-LIVE-SNAPLEN -->
+
+
+    <!-- Entry for PCAP-LIVE-PROMISC-P -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-promisc-p"><b>pcap-live-promisc-p</b> <i>pcap-live</i> =&gt; <i>boolean</i></a>
+    </p>
+    <blockquote><br />
+
+    <b><i>T</i></b> if capturing in promiscuous mode.
+
+    </blockquote>
+    <!-- End of entry for PCAP-LIVE-PROMISC -->
+
+
+    <!-- Entry for PCAP-LIVE-INTERFACE -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-interface"><b>pcap-live-interface</b> <i>pcap-live</i> =&gt; <i>string</i></a>
+    </p>
+    <blockquote><br />
+
+    Return string representation of network interface that is used for packet capture.
+
+    </blockquote>
+    <!-- End of entry for PCAP-LIVE-INTERFACE -->
+
+
+    <!-- Entry for PCAP-LIVE-DESCRIPTOR -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-descriptor"><b>pcap-live-descriptor</b> <i>pcap-live</i> =&gt; <i>integer</i></a>
+    </p>
+    <blockquote><br />
+
+    File descriptor that can be used with epoll/kqueue/select and non-blocking mode.
+
+    </blockquote>
+    <!-- End of entry for PCAP-LIVE-DESCRIPTOR -->
+
+
+    <!-- Entry for PCAP-LIVE-DATALINK -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-datalink"><b>pcap-live-datalink</b> <i>pcap-live</i> =&gt; <i>string</i></a>
+    </p>
+    <blockquote><br />
+    Return string representation of the datalink protocol that is used by <b><i>pcap-live</i></b> object.
+
+
+    </blockquote>
+    <!-- End of entry for PCAP-LIVE-DATALINK -->
+
+
+    <!-- Entry for PCAP-LIVE-ALIVE-P -->
+    <p><br />[Generic function]<br /><a class="none" name="pcap-live-alive-p"><b>pcap-live-alive-p</b> <i>pcap-live</i> =&gt; <i>boolean</i></a>
+    </p>
+    <blockquote><br />
+    
+    Returns <b><i>T</i></b> when <b><i>pcap-live</i></b> object is live and can be used for <a href="#capture"><code>capture</code></a>.
+    <b><i>NIL</i></b> when <a href="#stop"><code>stop</code></a> has been invoked and object is dead.
+
+    </blockquote>
+    <!-- End of entry for PCAP-LIVE-ALIVE -->
+
+    <!-- Entry for PLOKAMI-ERROR-TEXT -->
+    <p><br />[Generic function]<br /><a class="none" name="plokami-error-text"><b>plokami-error-text</b> <i>condition</i> =&gt; <i>string</i>
+</a>
+    </p>
+    <blockquote><br />
+
+    Reader that returns error description for all <a href="#plokami-error"><code>plokami-error</code></a> conditions.
+
+    </blockquote>
+    <!-- End of entry for PLOKAMI-ERROR-TEXT -->
+
+
+<br /><h3><a class="none" name="condition">Conditions</a></h3>
+
+
+    <!-- Entry for PLOKAMI-ERROR -->
+    <p><br />[Condition type]<br /><a class="none" name="plokami-error"><b>plokami-error</b></a>
+    </p>
+    <blockquote><br />
+
+Generic condition for this package. Superclass of all other <b>PLOKAMI</b> conditions.
+
+    </blockquote>
+    <!-- End of entry for PLOKAMI-ERROR -->
+
+    <!-- Entry for PACKET-INJECT-ERROR -->
+    <p><br />[Condition type]<br /><a class="none" name="packet-inject-error"><b>packet-inject-error</b></a>
+    </p>
+    <blockquote><br />
+
+Signaled on errors during packet injection.
+
+    </blockquote>
+    <!-- End of entry for PACKET-INJECT-ERROR -->
+
+
+    <!-- Entry for PACKET-FILTER-ERROR -->
+    <p><br />[Condition type]<br /><a class="none" name="packet-filter-error"><b>packet-filter-error</b></a>
+    </p>
+    <blockquote><br />
+
+Signaled when a Berkeley packet filter could not be established.
+
+    </blockquote>
+    <!-- End of entry for PACKET-FILTER-ERROR -->
+
+
+    <!-- Entry for PACKET-CAPTURE-ERROR -->
+    <p><br />[Condition type]<br /><a class="none" name="packet-capture-error"><b>packet-capture-error</b></a>
+    </p>
+    <blockquote><br />
+
+Signaled on errors during live packet capture.
+
+    </blockquote>
+    <!-- End of entry for PACKET-CAPTURE-ERROR -->
+
+
+    <!-- Entry for NETWORK-INTERFACE-ERROR -->
+    <p><br />[Condition type]<br /><a class="none" name="network-interface-error"><b>network-interface-error</b></a>
+    </p>
+    <blockquote><br />
+
+Signaled on all network interface errors.
+
+    </blockquote>
+    <!-- End of entry for NETWORK-INTERFACE-ERROR -->
+
+
+    <!-- Entry for CAPTURE-FILE-ERROR -->
+    <p><br />[Condition type]<br /><a class="none" name="capture-file-write-error"><b>capture-file-write-error</b></a>
+    </p>
+    <blockquote><br />
+
+Signaled on all pcap dumpfile errors.
+
+    </blockquote>
+    <!-- End of entry for CAPTURE-FILE-ERROR -->
+
+    <!-- Entry for CAPTURE-FILE-READ-ERROR -->
+    <p><br />[Condition type]<br /><a class="none" name="capture-file-read-error"><b>capture-file-read-error</b></a>
+    </p>
+    <blockquote><br />
+
+Signaled on all pcap readfile errors.
+
+    </blockquote>
+    <!-- End of entry for CAPTURE-FILE-READ-ERROR -->
+
+
+    <!-- Entry for BLOCK-MODE-ERROR -->
+    <p><br />[Condition type]<br /><a class="none" name="block-mode-error"><b>block-mode-error</b></a>
+    </p>
+    <blockquote><br />
+
+Signaled on errors when changing blocking mode.
+
+    </blockquote>
+    <!-- End of entry for BLOCK-MODE-ERROR -->
+
+<br /><h3><a class="none" name="restart">Restarts</a></h3>
+
+    <!-- Entry for CONTINUE-BLOCK-MODE -->
+    <p><br />[Restart]<br /><a class="none" name="continue-block-mode"><b>continue-block-mode</b></a>
+    </p>
+    <blockquote><br />
+    Continue without changing blocking mode.
+
+
+    </blockquote>
+    <!-- End of entry for CONTINUE-BLOCK-MODE -->
+
+    <!-- Entry for CONTINUE-NO-FILTER -->
+    <p><br />[Restart]<br /><a class="none" name="continue-no-filter"><b>continue-no-filter</b></a>
+    </p>
+    <blockquote><br />
+
+    Continue on filter setup error.
+
+    </blockquote>
+    <!-- End of entry for CONTINUE-NO-FILTER -->
+
+
+<br />&nbsp;<br /><h2><a class="none" name="ack">Acknowledgments</a></h2>
+
+<p>
+This documentation was prepared with <a href="http://weitz.de/documentation-template/">DOCUMENTATION-TEMPLATE</a>.
+</p>
+
+<p>
+<b>Copyright &copy; 2008-2010 xristos (AT) suspicious (DOT) org, All Rights Reserved</b>
+</p>
 </body>
 </html>
