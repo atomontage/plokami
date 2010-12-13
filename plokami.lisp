@@ -63,7 +63,7 @@
 
 ;; Read all packets available in PCAP dumpfile session.pcap and process them.
 (with-pcap-reader (reader "session.pcap" :snaplen 1500)
-  (capture pcap -1
+  (capture reader -1
            (lambda (sec usec caplen len buffer)
              ;; Packet processing code here
              (format t "Packet length: ~A bytes, on the wire: ~A bytes~%"
