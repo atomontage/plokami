@@ -27,4 +27,4 @@ whatever you want.
 [[http://atomontage.github.com/plokami]]
 
 * Author
-xristos (AT) suspicious (DOT) org
+xristos (AT) sdf (DOT) lonestar (DOT) org
