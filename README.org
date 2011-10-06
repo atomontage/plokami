@@ -15,9 +15,7 @@ LispWorks (darwin/win32) but should work on every platform that
 CFFI supports.
 
 * Performance
-Minimal/non-existent overhead over plain libpcap. Low memory
-use with very few dynamic allocations. No GC delays/packet loss due to
-garbage collection.
+Minimal overhead over plain libpcap.
 
 * License
 The code comes with a BSD-style license so you can basically do with it
