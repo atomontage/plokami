@@ -51,20 +51,19 @@
         that <a href="http://common-lisp.net/project/cffi/">CFFI</a> supports.
       </p>
       <p>
-        <strong>Performance:</strong> Minimal/non-existent overhead over plain libpcap.
-        Low memory use with very few dynamic allocations. No GC delays/packet loss due to garbage collection.
+        <strong>Performance:</strong> Minimal overhead over plain libpcap.
+        Low memory use with few dynamic allocations. 
       </p>
       <p>
         <strong>NOTE:</strong> Read timeouts, non-blocking mode operation and the
-        use of select/epoll/kqueue on the live interface file descriptor (as returned
+        use of select/epoll/kqueue on the live interface descriptor (as returned
         by <a href="#pcap-live-descriptor"><code>pcap-live-descriptor</code></a>)
-        depend on support from operating system/libpcap. If things involving these
-        operations do not work as they should, consult libpcap documentation
-        and platform specific notes.
+        depend on support from operating system/libpcap. If issues arise,
+        consult libpcap documentation and platform specific notes.
         <br /><br />
-        The file descriptor
+        The descriptor
         can not be used with <strong>kqueue</strong> on OSX (as of 10.5)
-        although the same file descriptor works fine with <strong>select</strong>.
+        although the same descriptor works fine with <strong>select</strong>.
         Recent FreeBSD versions have fixed this and <strong>kqueue</strong> works
         with no issues on these platforms.
       </p>
@@ -162,7 +161,7 @@
     welcome) </p>
     <p>If <a href="#find-all-devs"><code>find-all-devs</code></a>
     returns <b><i>NIL</i></b>, make sure you have appropriate permissions for
-    packet capture (read access on /dev/bpf* devices for OSX/BSD, root/CAP_NET_RAW on Linux).</p>
+    packet capture (read /dev/bpf* for OSX/BSD, root/CAP_NET_RAW on Linux).</p>
     
     <pre class='code'>
 <span style="color: #008ed1;">PLOKAMI&gt; </span><span style="color: #ffffff;">(find-all-devs)</span>
@@ -296,8 +295,8 @@ for headers. <a href="#network-interface-error"><code>NETWORK-INTERFACE-ERROR</c
     <blockquote><br />
 
 Return a list of all network devices that can be opened for capture. Result
-list mirrors layout explained in pcap_findalldevs(3). <b><i>NIL</i></b> is returned when
-no interfaces are available, possibly due to permission issues.<br />
+list layout explained in pcap_findalldevs(3). <b><i>NIL</i></b> is returned when
+no interfaces are available (e.g. permissionissues)<br />
 Signals <a href="#network-interface-error"><code>NETWORK-INTERFACE-ERROR</code></a> on errors.
 
     </blockquote>
@@ -368,10 +367,10 @@ Deallocates resources for <b><i>pcap-live</i></b>, <b><i>pcap-reader</i></b>,
     </p>
     <blockquote><br />
 
-Returns packet capture statistics from the start of the run
+Return packet capture statistics from the start of the run
 to the time of the call for live interface capture only. Statistics are
 returned as multiple values and correspond to packets received,
-packets dropped and packets dropped by interface (in this order).
+packets dropped and packets dropped by interface (in that order).
 <a href="#network-interface-error"><code>NETWORK-INTERFACE-ERROR</code></a> is signaled on failure.
 
     </blockquote>
