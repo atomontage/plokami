@@ -182,16 +182,13 @@ Read packets from the network in non-blocking mode, filter for <strong>IP</stron
 
 <pre class='code'>
 (<span style="color: #ff5555;">with-pcap-interface</span> (pcap <span style="color: #ffff55;">"en0"</span> <span style="color: #5555ff;">:promisc</span> t <span style="color: #5555ff;">:snaplen</span> 1500 <span style="color: #5555ff;">:nbio</span> t)
-  (<span style="color: #ff5555;">with-pcap-writer</span> (writer <span style="color: #ffff55;">"session.pcap"</span> <span style="color: #5555ff;">:snaplen</span> 1500 <span style="color: #5555ff;">:datalink</span>
-                            (pcap-live-datalink pcap))
+  (<span style="color: #ff5555;">with-pcap-writer</span> (writer <span style="color: #ffff55;">"session.pcap"</span> <span style="color: #5555ff;">:snaplen</span> 1500 <span style="color: #5555ff;">:datalink</span> (pcap-live-datalink pcap))
     (set-filter pcap <span style="color: #ffff55;">"ip"</span>)
     (<span style="color: #ff5555;">loop</span>
        (capture pcap -1
                 (<span style="color: #ff5555;">lambda</span> (sec usec caplen len buffer)
-                    (dump writer buffer sec usec <span style="color: #5555ff;">:length</span> caplen
-                          <span style="color: #5555ff;">:origlength</span> len)
-                    (format t <span style="color: #ffff55;">"Packet length: ~A bytes, on the wire: ~A bytes~%"</span>
-                            caplen len)))
+                    (dump writer buffer sec usec <span style="color: #5555ff;">:length</span> caplen <span style="color: #5555ff;">:origlength</span> len)
+                    (format t <span style="color: #ffff55;">"Packet length: ~A bytes, on the wire: ~A bytes~%"</span> caplen len)))
        <span style="color: #008ed1;">;; </span><span style="color: #008ed1;">Better to use select/epoll/kqueue on pcap-live-descriptor
 </span>       (sleep 0.01))))</pre>
 
@@ -202,8 +199,7 @@ Read all packets available in PCAP dumpfile <i>session.pcap</i> and process them
   (capture pcap -1
            (<span style="color: #ff5555;">lambda</span> (sec usec caplen len buffer)
              <span style="color: #008ed1;">;; </span><span style="color: #008ed1;">Packet processing code here
-</span>             (format t <span style="color: #ffff55;">"Packet length: ~A bytes, on the wire: ~A bytes~%"</span>
-                     caplen len))))</pre>
+</span>             (format t <span style="color: #ffff55;">"Packet length: ~A bytes, on the wire: ~A bytes~%"</span> caplen len))))</pre>
 
 In all cases, BUFFER vector used in callback <i>handler</i> supplied to <a href="#capture"><code>capture</code></a> is 
 allocated once per pcap instance and is overwritten every time <a href="#capture"><code>capture</code></a>
