@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"> 
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
     <title>
@@ -9,7 +9,7 @@
     <style type="text/css">
       /*<![CDATA[*/
       body { margin: 60px 100px; font-family: "Trebuchet MS", Verdana, sans-serif; max-width: 60em;}
-      pre.code { 
+      pre.code {
       padding:5px; font-size: 1.1em; border: 1px solid #000000; background: #000000; color: #ccc; }
       code {font-size: 1.1em;}
       h2 { border-bottom: 2px solid #000000;}
@@ -17,16 +17,16 @@
       ul {list-style-type: disc;}
       a { text-decoration: none; padding: 1px 2px 1px 2px; }
       a:visited { text-decoration: none; padding: 1px 2px 1px 2px; }
-      a:hover { text-decoration: none; padding: 1px 1px 1px 1px; border: 1px solid #000000; } 
+      a:hover { text-decoration: none; padding: 1px 1px 1px 1px; border: 1px solid #000000; }
       a:focus { text-decoration: none; padding: 1px 2px 1px 2px; border: none; }
       a.none { text-decoration: none; padding: 0; }
-      a.none:visited { text-decoration: none; padding: 0; } 
-      a.none:hover { text-decoration: none; border: none; padding: 0; } 
-      a.none:focus { text-decoration: none; border: none; padding: 0; } 
-      a.noborder { text-decoration: none; padding: 0; } 
-      a.noborder:visited { text-decoration: none; padding: 0; } 
-      a.noborder:hover { text-decoration: none; border: none; padding: 0; } 
-      a.noborder:focus { text-decoration: none; border: none; padding: 0; } 
+      a.none:visited { text-decoration: none; padding: 0; }
+      a.none:hover { text-decoration: none; border: none; padding: 0; }
+      a.none:focus { text-decoration: none; border: none; padding: 0; }
+      a.noborder { text-decoration: none; padding: 0; }
+      a.noborder:visited { text-decoration: none; padding: 0; }
+      a.noborder:hover { text-decoration: none; border: none; padding: 0; }
+      a.noborder:focus { text-decoration: none; border: none; padding: 0; }
       /*]]>*/
     </style>
   </head>
@@ -52,7 +52,7 @@
       </p>
       <p>
         <strong>Performance:</strong> Minimal overhead over plain libpcap.
-        Low memory use with few dynamic allocations. 
+        Low memory use with few dynamic allocations.
       </p>
       <p>
         <strong>NOTE:</strong> Read timeouts, non-blocking mode operation and the
@@ -149,9 +149,9 @@
       </li>
       <li><a href="#ack">Acknowledgments</a></li>
     </ul>
-    
+
     <br />&nbsp;<br /><h2><a class="none" name="download">Download</a></h2>
-    <p> The latest version is available from <a href="http://github.com/atomontage/plokami/">git</a> 
+    <p> The latest version is available from <a href="http://github.com/atomontage/plokami/">git</a>
     repository. You can also install it with <a href="http://www.quicklisp.org">Quicklisp</a>.</p>
 
     <p>For feature-requests, questions, patches email me at
@@ -162,7 +162,7 @@
     <p>If <a href="#find-all-devs"><code>find-all-devs</code></a>
     returns <b><i>NIL</i></b>, make sure you have appropriate permissions for
     packet capture (read /dev/bpf* for OSX/BSD, root/CAP_NET_RAW on Linux).</p>
-    
+
     <pre class='code'>
 <span style="color: #008ed1;">PLOKAMI&gt; </span><span style="color: #ffffff;">(find-all-devs)</span>
 <span style="color: #b9FC6D;">(("lo0" NIL 1
@@ -196,12 +196,12 @@ Read all packets available in PCAP dumpfile <i>session.pcap</i> and process them
 
 <pre class='code'>
 (<span style="color: #ff5555;">with-pcap-reader</span> (reader <span style="color: #ffff55;">"session.pcap"</span> <span style="color: #5555ff;">:snaplen</span> 1500)
-  (capture pcap -1
+  (capture reader -1
            (<span style="color: #ff5555;">lambda</span> (sec usec caplen len buffer)
              <span style="color: #008ed1;">;; </span><span style="color: #008ed1;">Packet processing code here
 </span>             (format t <span style="color: #ffff55;">"Packet length: ~A bytes, on the wire: ~A bytes~%"</span> caplen len))))</pre>
 
-In all cases, BUFFER vector used in callback <i>handler</i> supplied to <a href="#capture"><code>capture</code></a> is 
+In all cases, BUFFER vector used in callback <i>handler</i> supplied to <a href="#capture"><code>capture</code></a> is
 allocated once per pcap instance and is overwritten every time <a href="#capture"><code>capture</code></a>
 gets called. If packet persistence is required, BUFFER contents should be copied
 before <a href="#capture"><code>capture</code></a> gets called again.
@@ -406,7 +406,7 @@ is installed that can be invoked to continue on error.
 
 Injects <b><i>length</i></b> bytes to a live pcap interface
 (size of <b><i>buffer</i></b> if omitted). Return number of bytes injected
-on success. For performance reasons <b><i>buffer</i></b> should be a byte vector 
+on success. For performance reasons <b><i>buffer</i></b> should be a byte vector
 allocated with <b><i>cffi:make-shareable-byte-vector</i></b>.
 <br /><a href="#packet-inject-error"><code>PACKET-INJECT-ERROR</code></a> is signaled on failure.
 
@@ -420,7 +420,7 @@ allocated with <b><i>cffi:make-shareable-byte-vector</i></b>.
     <blockquote>
 
 <p>Writes contents of byte vector <b><i>data</i></b> to <b><i>pcap-writer</i></b>
-instance (which corresponds to a pcap dumpfile).</p> 
+instance (which corresponds to a pcap dumpfile).</p>
 <b><i>length</i></b> is the number of bytes
 to write and is set to the size of <b><i>data</i></b> when omitted.<br />
 <b><i>origlength</i></b> should be
@@ -429,7 +429,7 @@ set to the number of bytes originally present in the packet and is set to
 since the UNIX epoch at the time of capture (timeval structure in C).
 If you are using your own source buffer (instead of the one used by <b><i>plokami</i></b>),
 it should be allocated with <b><i>cffi:make-shareable-byte-vector</i></b>.
-As <b><i>libpcap</i></b> does not return useful value on pcap_dump() no <b><i>plokami</i></b> 
+As <b><i>libpcap</i></b> does not return useful value on pcap_dump() no <b><i>plokami</i></b>
 specific conditions, beyond simple assertions of argument checks, are raised by this function.
 
     </blockquote>
@@ -545,7 +545,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
     <blockquote><br />
 
     Minor version of savefile.
-    
+
     </blockquote>
     <!-- End of entry for PCAP-READER-MINOR -->
 
@@ -665,7 +665,7 @@ support it. No guarantee of returning within timeout is made.
     <p><br />[Generic function]<br /><a class="none" name="pcap-live-alive-p"><b>pcap-live-alive-p</b> <i>pcap-live</i> =&gt; <i>boolean</i></a>
     </p>
     <blockquote><br />
-    
+
     Returns <b><i>T</i></b> when <b><i>pcap-live</i></b> object is live and can be used for <a href="#capture"><code>capture</code></a>.
     <b><i>NIL</i></b> when <a href="#stop"><code>stop</code></a> has been invoked and object is dead.
 
