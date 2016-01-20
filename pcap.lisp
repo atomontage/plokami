@@ -50,6 +50,7 @@
 (defconstant +DLT_PPP_ETHER+ 51)
 (defconstant +DLT_PPP_PPPD+ 166)
 (defconstant +DLT_802_11+ 105)
+(defconstant +DLT_USB_LINUX+ 189)
 
 (defparameter *supported-datalinks*
   `(("NULL" . ,+DLT_NULL+)
@@ -61,7 +62,8 @@
     ("PPP-SERIAL" . ,+DLT_PPP_SERIAL+)
     ("PPP-ETHER" . ,+DLT_PPP_ETHER+)
     ("PPP-PPPD" . ,+DLT_PPP_PPPD+)
-    ("802.11-WLAN" . ,+DLT_802_11+)))
+    ("802.11-WLAN" . ,+DLT_802_11+)
+    ("USB-LINUX" . ,+DLT_USB_LINUX+)))
 
 
 (defparameter *pcap-version* nil
@@ -70,7 +72,7 @@
 
 (define-foreign-library libpcap
   (:windows (:default "wpcap"))
-  (:unix (:default "libpcap"))) 
+  (:unix (:default "libpcap")))
 
 (use-foreign-library libpcap)
 
@@ -333,7 +335,3 @@
 
 
 (setf *pcap-version* (%pcap-lib-version))
-
-
-
-
