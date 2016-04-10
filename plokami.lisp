@@ -67,7 +67,7 @@
            (lambda (sec usec caplen len buffer)
              ;; Packet processing code here
              (format t "Packet length: ~A bytes, on the wire: ~A bytes~%"
-                     caplen len))))             
+                     caplen len))))
 |#
 
 ;; Copyright (c) 2008 xristos@sdf.lonestar.org.  All rights reserved.
@@ -96,8 +96,7 @@
 ;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-(in-package :plokami)
+(in-package #:plokami)
 
 ;;; Globals
 
@@ -116,7 +115,7 @@
   (progn (warn "Locking not done on this implementation. Avoid plokami calls from multiple threads.")
          nil)
   )
- 
+
 ;; Mutex for pcap_compile which is not thread safe
 (defvar *compile-mutex*
   #+:sb-thread (sb-thread:make-mutex :name "*compile-mutex* lock")
@@ -349,7 +348,7 @@ used when capturing/reading the packets.
        (packet-capture-error . "Signaled on error during live packet capture.")
        (packet-inject-error . "Signaled on errors during packet injection.")
        (block-mode-error . "Signaled on error when changing blocking mode."))))
-        
+
 ;;; ------------------------------
 ;;; Generic functions & methods
 
@@ -583,7 +582,7 @@ beyond simple assertions of argument checks, are raised by this function."))
     (continue-block-mode ()
       :report "Continue without setting non-blocking mode."
       (warn "Error setting non-blocking mode."))))
-  
+
 
 ;; Signals block-mode-error
 (defmethod set-non-block ((cap pcap-live) (block-mode (eql nil)))
@@ -838,6 +837,3 @@ the resulting instance in WRITER. Forms in body are wrapped in an
      (unwind-protect
           (progn ,@body)
        (stop ,writer))))
-
-
-

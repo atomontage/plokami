@@ -30,7 +30,7 @@
 ;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-(in-package :plokami)
+(in-package #:plokami)
 
 (defconstant +error-buffer-size+ 256) ; PCAP_ERRBUF_SIZE
 (defconstant +PCAP_IF_LOOPBACK+  1)
@@ -65,10 +65,8 @@
     ("802.11-WLAN" . ,+DLT_802_11+)
     ("USB-LINUX" . ,+DLT_USB_LINUX+)))
 
-
 (defparameter *pcap-version* nil
   "Version of native libpcap library.")
-
 
 (define-foreign-library libpcap
   (:windows (:default "wpcap"))

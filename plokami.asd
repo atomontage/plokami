@@ -25,22 +25,15 @@
 ;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-(in-package :cl-user)
-
-(defpackage :plokami-asd
-  (:use :cl :asdf))
-
-(in-package :plokami-asd)
-
 (defsystem :plokami
   :name "Plokami"
   :description "Common Lisp PCAP interface."
   :author "xristos@sdf.lonestar.org"
   :serial t
+  :license "BSD"
   :version "1.5"
   :depends-on (:cffi)
   :components ((:file "packages")
                (:file "pcap")
                (:file "plokami")
                (:file "utils")))
-
