@@ -112,13 +112,11 @@
   (broadaddr :pointer)                  ; sockaddr *
   (dstaddr :pointer))                   ; sockaddr *
 
-
 (defcstruct sockaddr
   "BSD SOCKADDR structure."
   (sa_len :uint8)
   (sa_family :uint8)
   (sa_data :char))
-
 
 ;; Missing field for win32
 (defcstruct pcap_stat
@@ -126,7 +124,6 @@
   (ps_recv :uint)
   (ps_drop :uint)
   (ps_ifdrop :uint))
-
 
 (defcstruct bpf_program
   "Berkeley Packet Filter program structure."
@@ -159,7 +156,6 @@
 
 (defcfun ("link_ntoa" %link-ntoa) :string
   (sdl :pointer))
-
 
 (defcfun ("pcap_open_live" %pcap-open-live) :pointer ; pcap_t *
   (device :string)
@@ -196,7 +192,6 @@
 (defcfun ("pcap_freealldevs" %pcap-freealldevs) :void
   (alldevs :pointer))                   ; pcap_if_t *
 
-
 (defcfun ("pcap_lookupdev" %pcap-lookupdev) :string
   (errbuf :pointer))                    ; char *
 
@@ -221,7 +216,6 @@
   ;                       u_char *bytes
   (callback :pointer)
   (user :pointer))                     ; uchar *, gets passed to handler
-
 
 (defcfun ("pcap_dump" %pcap-dump) :void
   (user :pointer)                       ; uchar *

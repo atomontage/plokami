@@ -254,7 +254,7 @@ returning within timeout.")
     :initarg :file
     :reader pcap-reader-file
     :initform (error "Must supply filename to read packets from.")
-    :documentation "File to read packets from.")
+    :documentation "File (namestring) to read packets from.")
    (swapped
     :reader pcap-reader-swapped-p
     :initform nil
@@ -280,7 +280,7 @@ returning within timeout.")
     :initarg :file
     :reader pcap-writer-file
     :initform (error "Must supply file to write packets to.")
-    :documentation "File to write packets to.")
+    :documentation "File (namestring) to write packets to.")
    (dumper :initform nil
            :documentation "Foreign packet dumper object.")
    (datalink :initarg :datalink :initform "EN10MB" :reader pcap-writer-datalink)
@@ -300,15 +300,21 @@ returning within timeout.")
 capture from a network interface.
 
 INTERFACE is a string that defines the network interface to use for capture.
+
 PROMISC should be T for promiscuous mode, NIL otherwise.
+
 NBIO should be T when non-blocking operation is required. NIL otherwise
-(default). TIMEOUT should hold read timeout in milliseconds.
-0 will wait forever. Only used when in blocking mode and only in platforms
+(default).
+
+TIMEOUT should hold read timeout in milliseconds. 0 will wait forever.
+Only used when in blocking mode and only in platforms
 that support it. No guarantee of actually returning within TIMEOUT is made.
-Use non-blocking mode if that is not adequate. SNAPLEN should contain the
-number of bytes captured per packet. Default is 68 which should be enough
-for headers. `NETWORK-INTERFACE-ERROR' or `BLOCK-MODE-ERROR' is signaled
-on errors."
+Use non-blocking mode if that is not adequate.
+
+SNAPLEN should contain the number of bytes captured per packet. Default is 68
+which should be enough for headers.
+
+`NETWORK-INTERFACE-ERROR' or `BLOCK-MODE-ERROR' is signaled on errors."
   (make-instance 'pcap-live :if interface  :promisc promisc :nbio nbio
                  :timeout timeout :snaplen snaplen))
 
@@ -317,23 +323,38 @@ on errors."
   "Creates and returns a `PCAP-READER' instance that is used for reading
 packets from a pcap dumpfile.
 
-FILE is the filename to open and read packets from. SNAPLEN should contain
-the number of bytes read per packet captured. Default is 68 which should
-be enough for headers. `CAPTURE-FILE-READ-ERROR' is signaled on errors."
-  (make-instance 'pcap-reader :file file :snaplen snaplen))
+FILE is the filename (namestring or pathname) to open and read packets from.
+
+SNAPLEN should contain the number of bytes read per packet captured.
+Default is 68 which should be enough for headers.
+
+`CAPTURE-FILE-READ-ERROR' is signaled on errors."
+  (make-instance 'pcap-reader
+                 :file (if (pathnamep file)
+                           #+openmcl (ccl::native-translated-namestring file)
+                           #-openmcl (namestring file)
+                           file)
+                 :snaplen snaplen))
 
 
 (defun make-pcap-writer (file &key (datalink "EN10MB") (snaplen 68))
   "Creates and returns a `PCAP-WRITER' instance that is used to write packets
 to a pcap dumpfile.
 
-FILE is the filename to open and write packets to. DATALINK should contain
-a string that represents the datalink protocol of the network interface used
-to capture the packets. Default is Ethernet. SNAPLEN should contain the
-number of bytes read per packet captured and should be the same as the one
-used when capturing/reading the packets.
+FILE is the filename (namestring or pathname) to open and write packets to.
+
+DATALINK should contain a string that represents the datalink protocol of the
+network interface used to capture the packets. Default is Ethernet.
+
+SNAPLEN should contain the number of bytes read per packet captured and should
+be the same as the one used when capturing/reading the packets.
+
 `CAPTURE-FILE-WRITE-ERROR' is signaled on errors."
-  (make-instance 'pcap-writer :file file :datalink datalink :snaplen snaplen))
+  (make-instance 'pcap-writer :file (if (pathnamep file)
+                                        #+openmcl (ccl::native-translated-namestring file)
+                                        #-openmcl (namestring file)
+                                        file)
+                              :datalink datalink :snaplen snaplen))
 
 
 ;;;
@@ -353,13 +374,13 @@ used when capturing/reading the packets.
                      `(define-condition ,name (plokami-error) ()
                         (:documentation ,documentation))))))
   (define-plokami-conditions
-      ((network-interface-error . "Signaled on all network interface errors.")
-       (capture-file-read-error . "Signaled on all pcap readfile errors.")
+      ((network-interface-error  . "Signaled on all network interface errors.")
+       (capture-file-read-error  . "Signaled on all pcap readfile errors.")
        (capture-file-write-error . "Signaled on all pcap dumpfile errors.")
-       (packet-filter-error . "Signaled when a berkeley packet filter could not be established.")
-       (packet-capture-error . "Signaled on error during live packet capture.")
-       (packet-inject-error . "Signaled on errors during packet injection.")
-       (block-mode-error . "Signaled on error when changing blocking mode."))))
+       (packet-filter-error      . "Signaled when a berkeley packet filter could not be established.")
+       (packet-capture-error     . "Signaled on error during live packet capture.")
+       (packet-inject-error      . "Signaled on errors during packet injection.")
+       (block-mode-error         . "Signaled on error when changing blocking mode."))))
 
 
 ;;;
@@ -386,18 +407,24 @@ capturing, or all the packets in a file when reading a pcap dumpfile.
 
 Handler must be a user defined function that accepts five arguments and will
 get called once for every packet received. The values passed are SEC, USEC,
-CAPLEN, LEN and BUFFER. SEC and USEC correspond to
-seconds/microseconds since the UNIX epoch (timeval structure in C) at the time
-of capture. CAPLEN corresponds to the number of bytes captured. LEN
-corresponds to the number of bytes originally present in the packet but not
-necessarily captured. BUFFER is a statically allocated byte vector (via
-`CFFI:MAKE-SHAREABLE-BYTE-VECTOR') with the contents of the captured packet.
-This means that successive calls of the packet handler will overwrite its
-contents and if packet persistence is required, contents of BUFFER should
-be copied somewhere else from within HANDLER.
+CAPLEN, LEN and BUFFER.
+
+SEC and USEC correspond to seconds/microseconds since the UNIX epoch
+(timeval structure in C) at the time of capture.
+
+CAPLEN corresponds to the number of bytes captured.
+
+LEN corresponds to the number of bytes originally present in the packet but
+not necessarily captured.
+
+BUFFER is a statically allocated byte vector (via `CFFI:MAKE-SHAREABLE-BYTE-VECTOR')
+with the contents of the captured packet. This means that successive calls of the
+packet handler will overwrite its contents and if packet persistence is required,
+contents of BUFFER should be copied somewhere else from within HANDLER.
 
 If an error occurs, `PACKET-CAPTURE-ERROR' is signaled for live
 interfaces and `CAPTURE-FILE-READ-ERROR' for pcap dumpfiles (reading).
+
 For more details on callback handling, see CFFI callback `PCAP-HANDLER'."))
 
 
@@ -430,16 +457,21 @@ is installed that can be invoked to continue on error."))
 
 (defgeneric dump (pcap-writer data sec usec &key length origlength)
   (:documentation "Writes contents of byte vector DATA to `PCAP-WRITER'
-instance (which corresponds to a pcap dumpfile). LENGTH is the number of bytes
-to write and is set to the size of DATA when omitted. ORIGLENGTH should be
-set to the number of bytes originally present in the packet and is set to
-LENGTH when omitted. SEC and USEC should be set to seconds/microseconds
-since the UNIX epoch at the time of capture (timeval structure in C).
-If you are using your own source buffer (instead of the one used by PLOKAMI),
-it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'. As LIBPCAP
-does not return useful value on pcap_dump() no PLOKAMI specific conditions,
-beyond simple assertions of argument checks, are raised by this function."))
+instance (which corresponds to a pcap dumpfile).
 
+LENGTH is the number of bytes to write and is set to the size of DATA
+when omitted.
+
+ORIGLENGTH should be set to the number of bytes originally present in
+the packet and is set to LENGTH when omitted.
+
+SEC and USEC should be set to seconds/microseconds since the UNIX epoch
+at the time of capture (timeval structure in C).
+
+If you are using your own source buffer (instead of the one used by PLOKAMI),
+it should be allocated with `CFFI:MAKE-SHAREABLE-BYTE-VECTOR'. As LIBPCAP does
+not return a useful value on pcap_dump(), no PLOKAMI specific conditions,
+beyond simple assertions of argument checks, are raised by this function."))
 
 (defmethod stop progn ((cap pcap-mixin))
   (with-slots (pcap_t live) cap
@@ -728,9 +760,11 @@ beyond simple assertions of argument checks, are raised by this function."))
 
 ;; Signals network-interface-error
 (defun find-all-devs ()
-  "Return a list of all network devices that can be opened for capture. Result
-list mirrors layout explained in pcap_findalldevs(3). NIL is returned when
-no interfaces are available, possibly due to permission issues.
+  "Return a list of all network devices that can be opened for capture.
+Result list mirrors layout explained in pcap_findalldevs(3).
+NIL is returned when no interfaces are available, possibly due to permission
+issues.
+
 Signals `NETWORK-INTERFACE-ERROR' on errors."
   (with-error-buffer (eb)
     (with-foreign-pointer (devp 4)
