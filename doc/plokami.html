@@ -1,35 +1,31 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-    <title>
-      PLOKAMI - Common Lisp PCAP Interface
-    </title>
-    <style type="text/css">
-      /*<![CDATA[*/
-      body { margin: 60px 100px; font-family: "Trebuchet MS", Verdana, sans-serif; max-width: 60em;}
-      pre.code {
-      padding:5px; font-size: 1.1em; border: 1px solid #000000; background: #000000; color: #ccc; }
-      code {font-size: 1.1em;}
-      h2 { border-bottom: 2px solid #000000;}
-      h3, h4 { text-decoration: underline; }
-      ul {list-style-type: disc;}
-      a { text-decoration: none; padding: 1px 2px 1px 2px; }
-      a:visited { text-decoration: none; padding: 1px 2px 1px 2px; }
-      a:hover { text-decoration: none; padding: 1px 1px 1px 1px; border: 1px solid #000000; }
-      a:focus { text-decoration: none; padding: 1px 2px 1px 2px; border: none; }
-      a.none { text-decoration: none; padding: 0; }
-      a.none:visited { text-decoration: none; padding: 0; }
-      a.none:hover { text-decoration: none; border: none; padding: 0; }
-      a.none:focus { text-decoration: none; border: none; padding: 0; }
-      a.noborder { text-decoration: none; padding: 0; }
-      a.noborder:visited { text-decoration: none; padding: 0; }
-      a.noborder:hover { text-decoration: none; border: none; padding: 0; }
-      a.noborder:focus { text-decoration: none; border: none; padding: 0; }
-      /*]]>*/
-    </style>
-  </head>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>
+    PLOKAMI - Common Lisp PCAP Interface
+</title>
+<style>
+    body { margin: 60px 100px; font-family: "Trebuchet MS", Verdana, sans-serif; max-width: 60em; }
+    pre.code { padding:5px; font-size: 1.1em; border: 1px solid #000000; background: #000000; color: #ccc; }
+    code { font-size: 1.1em; }
+    h2 { border-bottom: 2px solid #000000; }
+    h3, h4 { text-decoration: underline; }
+    ul { list-style-type: disc; }
+    a { text-decoration: none; padding: 1px 2px 1px 2px; }
+    a:visited { text-decoration: none; padding: 1px 2px 1px 2px; }
+    a:hover { text-decoration: none; padding: 1px 1px 1px 1px; border: 1px solid #000000; }
+    a:focus { text-decoration: none; padding: 1px 2px 1px 2px; border: none; }
+    a.none { text-decoration: none; padding: 0; }
+    a.none:visited { text-decoration: none; padding: 0; }
+    a.none:hover { text-decoration: none; border: none; padding: 0; }
+    a.none:focus { text-decoration: none; border: none; padding: 0; }
+    a.noborder { text-decoration: none; padding: 0; }
+    a.noborder:visited { text-decoration: none; padding: 0; }
+    a.noborder:hover { text-decoration: none; border: none; padding: 0; }
+    a.noborder:focus { text-decoration: none; border: none; padding: 0; }
+</style>
+</head>
 
   <body bgcolor="white">
     <h1> PLOKAMI - Common Lisp PCAP Interface </h1>
@@ -236,7 +232,7 @@ Version of native libpcap library.
 <p>Creates and returns a <b><i>pcap-writer</i></b> instance that is used to write packets
 to a pcap dumpfile.</p>
 
-<b><i>file</i></b> is the filename to open and write packets to. <br /><b><i>datalink</i></b> should contain
+<b><i>file</i></b> is the filename (native namestring or pathname) to open and write packets to. <br /><b><i>datalink</i></b> should contain
 a string that represents the datalink protocol of the network interface used
 to capture the packets. Default is "EN10MB" for Ethernet. See <b>*supported-datalinks*</b> in <b>pcap.lisp</b> for more.<br />
 <b><i>snaplen</i></b> should contain the number of bytes read per packet captured and should be the same as the one
@@ -254,7 +250,7 @@ used when capturing/reading the packets. <a href="#capture-file-write-error"><co
 <p>Creates and returns a <b><i>pcap-reader</i></b> instance that is used for reading
 packets from a pcap dumpfile.</p>
 
-<b><i>file</i></b> is the filename to open and read packets from.<br /><b><i>snaplen</i></b> should contain
+<b><i>file</i></b> is the filename (native namestring or pathname) to open and read packets from.<br /><b><i>snaplen</i></b> should contain
 the number of bytes read per packet captured. Default is 68 which should
 be enough for headers. <a href="#capture-file-read-error"><code>CAPTURE-FILE-READ-ERROR</code></a> is signaled on errors.
 
@@ -490,7 +486,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
     <p><br />[Generic function]<br /><a class="none" name="pcap-writer-file"><b>pcap-writer-file</b> <i>pcap-writer</i> =&gt; <i>string</i></a>
     </p>
     <blockquote><br />
-    File to write packets to.
+    File (native namestring) to write packets to.
 
     </blockquote>
     <!-- End of entry for PCAP-WRITER-FILE -->
@@ -566,7 +562,7 @@ on callback handling, see CFFI callback <b><i>pcap-handler</i></b>.</p>
     </p>
     <blockquote><br />
 
-    File to read packets from.
+    File (native namestring) to read packets from.
 
     </blockquote>
     <!-- End of entry for PCAP-READER-FILE -->

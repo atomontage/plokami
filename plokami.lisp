@@ -254,7 +254,7 @@ returning within timeout.")
     :initarg :file
     :reader pcap-reader-file
     :initform (error "Must supply filename to read packets from.")
-    :documentation "File (namestring) to read packets from.")
+    :documentation "File (native namestring) to read packets from.")
    (swapped
     :reader pcap-reader-swapped-p
     :initform nil
@@ -280,7 +280,7 @@ returning within timeout.")
     :initarg :file
     :reader pcap-writer-file
     :initform (error "Must supply file to write packets to.")
-    :documentation "File (namestring) to write packets to.")
+    :documentation "File (native namestring) to write packets to.")
    (dumper :initform nil
            :documentation "Foreign packet dumper object.")
    (datalink :initarg :datalink :initform "EN10MB" :reader pcap-writer-datalink)
@@ -323,17 +323,14 @@ which should be enough for headers.
   "Creates and returns a `PCAP-READER' instance that is used for reading
 packets from a pcap dumpfile.
 
-FILE is the filename (namestring or pathname) to open and read packets from.
+FILE is the filename (native namestring or pathname) to open and read packets from.
 
 SNAPLEN should contain the number of bytes read per packet captured.
 Default is 68 which should be enough for headers.
 
 `CAPTURE-FILE-READ-ERROR' is signaled on errors."
   (make-instance 'pcap-reader
-                 :file (if (pathnamep file)
-                           #+openmcl (ccl::native-translated-namestring file)
-                           #-openmcl (namestring file)
-                           file)
+                 :file (uiop:native-namestring file)
                  :snaplen snaplen))
 
 
@@ -341,7 +338,7 @@ Default is 68 which should be enough for headers.
   "Creates and returns a `PCAP-WRITER' instance that is used to write packets
 to a pcap dumpfile.
 
-FILE is the filename (namestring or pathname) to open and write packets to.
+FILE is the filename (native namestring or pathname) to open and write packets to.
 
 DATALINK should contain a string that represents the datalink protocol of the
 network interface used to capture the packets. Default is Ethernet.
@@ -350,11 +347,9 @@ SNAPLEN should contain the number of bytes read per packet captured and should
 be the same as the one used when capturing/reading the packets.
 
 `CAPTURE-FILE-WRITE-ERROR' is signaled on errors."
-  (make-instance 'pcap-writer :file (if (pathnamep file)
-                                        #+openmcl (ccl::native-translated-namestring file)
-                                        #-openmcl (namestring file)
-                                        file)
-                              :datalink datalink :snaplen snaplen))
+  (make-instance 'pcap-writer
+                 :file (uiop:native-namestring file)
+                 :datalink datalink :snaplen snaplen))
 
 
 ;;;

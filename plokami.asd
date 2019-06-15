@@ -32,7 +32,10 @@
   :serial t
   :license "BSD"
   :version "1.5"
-  :depends-on (:cffi)
+  :homepage "https://atomontage.github.io/plokami"
+  :bug-tracker "https://github.com/atomontage/plokami/issues"
+  :source-control (:git "https://github.com/atomontage/plokami")
+  :depends-on (:uiop :cffi)
   :components ((:file "packages")
                (:file "pcap")
                (:file "plokami")
