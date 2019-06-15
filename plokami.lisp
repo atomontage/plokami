@@ -1,51 +1,51 @@
-;;; plokami.lisp --- Lispy interface to libpcap
-;;
-;;; Features:
-;;
-;; * BPF
-;; * Injection
-;; * Dumpfile input/output
-;; * Live capture/NBIO
-;;
-;; When using multiple pcap instances to capture packets at the same time
-;; on different threads, access to *callbacks* and *concurrent-pcap*
-;; should be synchronized according to implementation. This is currently
-;; implemented only for SBCL and CCL.
-;;
-;; Also, thread safety of libpcap itself is not clearly defined so proceed
-;; with caution. Multithreading seems to work fine with the exception of
-;; pcap_compile which uses global data structures and should only be called
-;; in a synchronized way. This is done in set-filter for SBCL and CCL using
-;; *compile-mutex*.
-;;
-;; Finally, read timeouts on live packet capture are not supported on every
-;; platform. This is a libpcap/operating system issue. If in doubt, read
-;; the platform specific libpcap documentation and experiment.
-;; You should not depend on read timeouts firing (ie. capture returning
-;; within timeout) if your code needs to run on multiple operating systems.
-;;
-;; The best way to make sure that capture does not wait forever, is to use
-;; non-blocking mode in combination with your own event notification scheme
-;; (select/epoll/kqueue etc). This is also the preferred way to capture
-;; packets from multiple pcap instances, threads should be considered as
-;; a last resort.
-;;
-;; How to use:
-;;
-;; 1) Invoke constructors: make-pcap-live, make-pcap-reader, make-pcap-writer
-;;
-;; 2) Invoke methods specialized on these three classes mainly
-;;    capture, dump, set-non-block, set-filter, stats
-;;
-;; 3) Invoke stop when finished
-;;
-;; OR use convenience macros (with-pcap-interface, with-pcap-reader,
-;;                            with-pcap-writer) that wrap most of the above
-
-;;; Examples:
-;;
-;; Read/process/dump packets in realtime, do not block on capture.
-;; Interrupt to cleanup and exit.
+;;;; plokami.lisp --- Lispy interface to LIBPCAP
+;;;;
+;;;; Features:
+;;;;
+;;;; * BPF
+;;;; * Injection
+;;;; * Dumpfile input/output
+;;;; * Live capture/NBIO
+;;;;
+;;;; When using multiple pcap instances to capture packets at the same time
+;;;; on different threads, access to *callbacks* and *concurrent-pcap*
+;;;; should be synchronized according to implementation. This is currently
+;;;; implemented only for SBCL and CCL.
+;;;;
+;;;; Also, thread safety of libpcap itself is not clearly defined so proceed
+;;;; with caution. Multithreading seems to work fine with the exception of
+;;;; pcap_compile which uses global data structures and should only be called
+;;;; in a synchronized way. This is done in set-filter for SBCL and CCL using
+;;;; *compile-mutex*.
+;;;;
+;;;; Finally, read timeouts on live packet capture are not supported on every
+;;;; platform. This is a libpcap/operating system issue. If in doubt, read
+;;;; the platform specific libpcap documentation and experiment.
+;;;; You should not depend on read timeouts firing (ie. capture returning
+;;;; within timeout) if your code needs to run on multiple operating systems.
+;;;;
+;;;; The best way to make sure that capture does not wait forever, is to use
+;;;; non-blocking mode in combination with your own event notification scheme
+;;;; (select/epoll/kqueue etc). This is also the preferred way to capture
+;;;; packets from multiple pcap instances, threads should be considered as
+;;;; a last resort.
+;;;;
+;;;; How to use:
+;;;;
+;;;; 1) Invoke constructors: make-pcap-live, make-pcap-reader, make-pcap-writer
+;;;;
+;;;; 2) Invoke methods specialized on these three classes mainly
+;;;;    capture, dump, set-non-block, set-filter, stats
+;;;;
+;;;; 3) Invoke stop when finished
+;;;;
+;;;; OR use convenience macros (with-pcap-interface, with-pcap-reader,
+;;;;                            with-pcap-writer) that wrap most of the above
+;;;;
+;;;; Examples:
+;;;;
+;;;; Read/process/dump packets in realtime, do not block on capture.
+;;;; Interrupt to cleanup and exit.
 
 #|
 (with-pcap-interface (pcap "en0" :promisc t :snaplen 1500 :nbio t)
@@ -70,35 +70,39 @@
                      caplen len))))
 |#
 
-;; Copyright (c) 2008 xristos@sdf.lonestar.org.  All rights reserved.
+;;;; Copyright (c) 2008 xristos@sdf.lonestar.org.  All rights reserved.
 
-;; Redistribution and use in source and binary forms, with or without
-;; modification, are permitted provided that the following conditions
-;; are met:
-
-;;   * Redistributions of source code must retain the above copyright
-;;     notice, this list of conditions and the following disclaimer.
-
-;;   * Redistributions in binary form must reproduce the above
-;;     copyright notice, this list of conditions and the following
-;;     disclaimer in the documentation and/or other materials
-;;     provided with the distribution.
-
-;; THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
-;; OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-;; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-;; ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
-;; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-;; DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-;; GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-;; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-;; WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;; Redistribution and use in source and binary forms, with or without
+;;;; modification, are permitted provided that the following conditions
+;;;; are met:
+;;;;
+;;;;   * Redistributions of source code must retain the above copyright
+;;;;     notice, this list of conditions and the following disclaimer.
+;;;;
+;;;;   * Redistributions in binary form must reproduce the above
+;;;;     copyright notice, this list of conditions and the following
+;;;;     disclaimer in the documentation and/or other materials
+;;;;     provided with the distribution.
+;;;;
+;;;; THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
+;;;; OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+;;;; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+;;;; ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+;;;; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+;;;; DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+;;;; GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+;;;; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+;;;; WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 (in-package #:plokami)
 
+
+;;;
 ;;; Globals
+;;;
+
 
 (defvar *callbacks*
   #+:sb-thread (make-hash-table :synchronized t)
@@ -126,8 +130,9 @@
   )
 
 
-;;; ------------------------------
+;;;
 ;;; Internal Functions
+;;;
 
 
 (defun make-error-buffer ()
@@ -171,8 +176,9 @@
                    caplen len buffer))))))
 
 
-;;; ------------------------------
+;;;
 ;;; Classes
+;;;
 
 
 (defclass pcap-mixin ()
@@ -283,8 +289,11 @@ returning within timeout.")
   (:documentation
    "Class for writing packets to a dumpfile."))
 
-;;; ------------------------------
+
+;;;
 ;;; Constructors
+;;;
+
 
 (defun make-pcap-live (interface &key promisc nbio (timeout 50) (snaplen 68))
   "Creates and returns a `PCAP-LIVE' instance that is used for live packet
@@ -326,8 +335,11 @@ used when capturing/reading the packets.
 `CAPTURE-FILE-WRITE-ERROR' is signaled on errors."
   (make-instance 'pcap-writer :file file :datalink datalink :snaplen snaplen))
 
-;;; ------------------------------
+
+;;;
 ;;; Conditions
+;;;
+
 
 (define-condition plokami-error (error)
   ((text :initarg :text :reader plokami-error-text))
@@ -349,8 +361,11 @@ used when capturing/reading the packets.
        (packet-inject-error . "Signaled on errors during packet injection.")
        (block-mode-error . "Signaled on error when changing blocking mode."))))
 
-;;; ------------------------------
+
+;;;
 ;;; Generic functions & methods
+;;;
+
 
 (defgeneric stop (pcap-mixin)
   (:method-combination progn)
@@ -706,12 +721,12 @@ beyond simple assertions of argument checks, are raised by this function."))
         (%pcap-dump dumper header ptr)))))
 
 
-;;; ------------------------------
+;;;
 ;;; Exported functions
+;;;
 
 
 ;; Signals network-interface-error
-;; Messy but it works
 (defun find-all-devs ()
   "Return a list of all network devices that can be opened for capture. Result
 list mirrors layout explained in pcap_findalldevs(3). NIL is returned when

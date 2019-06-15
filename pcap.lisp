@@ -1,33 +1,33 @@
-;;; pcap.lisp --- CFFI binding to libpcap
-;;
-;; Contains bindings to every function available in libpcap.
-;; Direct usage of these functions is not recommended.
+;;;; pcap.lisp --- CFFI binding to libpcap
+;;;;
+;;;; Direct bindings to every function available in libpcap.
+;;;; Direct usage of these functions is not recommended.
 
-;; Copyright (c) 2008, xristos@sdf.lonestar.org.  All rights reserved.
+;;;; Copyright (c) 2008, xristos@sdf.lonestar.org.  All rights reserved.
 
-;; Redistribution and use in source and binary forms, with or without
-;; modification, are permitted provided that the following conditions
-;; are met:
-
-;;   * Redistributions of source code must retain the above copyright
-;;     notice, this list of conditions and the following disclaimer.
-
-;;   * Redistributions in binary form must reproduce the above
-;;     copyright notice, this list of conditions and the following
-;;     disclaimer in the documentation and/or other materials
-;;     provided with the distribution.
-
-;; THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
-;; OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-;; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-;; ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
-;; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-;; DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
-;; GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-;; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-;; WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;; Redistribution and use in source and binary forms, with or without
+;;;; modification, are permitted provided that the following conditions
+;;;; are met:
+;;;;
+;;;;   * Redistributions of source code must retain the above copyright
+;;;;     notice, this list of conditions and the following disclaimer.
+;;;;
+;;;;   * Redistributions in binary form must reproduce the above
+;;;;     copyright notice, this list of conditions and the following
+;;;;     disclaimer in the documentation and/or other materials
+;;;;     provided with the distribution.
+;;;;
+;;;; THIS SOFTWARE IS PROVIDED BY THE AUTHOR 'AS IS' AND ANY EXPRESSED
+;;;; OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+;;;; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+;;;; ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+;;;; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+;;;; DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+;;;; GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+;;;; INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+;;;; WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 (in-package #:plokami)
@@ -38,32 +38,32 @@
 
 ;; Supported datalink types
 ;; TODO: Add more from pcap-bpf.h
-;;       Maybe use cffi-grovel? Needs headers to be present at compilation
+;;       Maybe use cffi-grovel? Needs headers to be present at compilation.
 
-(defconstant +DLT_NULL+ 0)
-(defconstant +DLT_EN10MB+ 1)
-(defconstant +DLT_SLIP+ 8)
-(defconstant +DLT_PPP+ 9)
-(defconstant +DLT_PPP_BSDOS1+ 14)
-(defconstant +DLT_PPP_BSDOS2+ 16)
-(defconstant +DLT_PPP_SERIAL+ 50)
-(defconstant +DLT_PPP_ETHER+ 51)
-(defconstant +DLT_PPP_PPPD+ 166)
-(defconstant +DLT_802_11+ 105)
-(defconstant +DLT_USB_LINUX+ 189)
+(defconstant +DLT_NULL+          0)
+(defconstant +DLT_EN10MB+        1)
+(defconstant +DLT_SLIP+          8)
+(defconstant +DLT_PPP+           9)
+(defconstant +DLT_PPP_BSDOS1+   14)
+(defconstant +DLT_PPP_BSDOS2+   16)
+(defconstant +DLT_PPP_SERIAL+   50)
+(defconstant +DLT_PPP_ETHER+    51)
+(defconstant +DLT_PPP_PPPD+    166)
+(defconstant +DLT_802_11+      105)
+(defconstant +DLT_USB_LINUX+   189)
 
 (defparameter *supported-datalinks*
-  `(("NULL" . ,+DLT_NULL+)
-    ("EN10MB" . ,+DLT_EN10MB+)
-    ("SLIP" . ,+DLT_SLIP+)
-    ("PPP" . ,+DLT_PPP+)
-    ("PPP-BSDOS" . ,+DLT_PPP_BSDOS1+)
-    ("PPP-BSDOS" . ,+DLT_PPP_BSDOS2+)
-    ("PPP-SERIAL" . ,+DLT_PPP_SERIAL+)
-    ("PPP-ETHER" . ,+DLT_PPP_ETHER+)
-    ("PPP-PPPD" . ,+DLT_PPP_PPPD+)
-    ("802.11-WLAN" . ,+DLT_802_11+)
-    ("USB-LINUX" . ,+DLT_USB_LINUX+)))
+  `(("NULL"         . ,+DLT_NULL+)
+    ("EN10MB"       . ,+DLT_EN10MB+)
+    ("SLIP"         . ,+DLT_SLIP+)
+    ("PPP"          . ,+DLT_PPP+)
+    ("PPP-BSDOS"    . ,+DLT_PPP_BSDOS1+)
+    ("PPP-BSDOS"    . ,+DLT_PPP_BSDOS2+)
+    ("PPP-SERIAL"   . ,+DLT_PPP_SERIAL+)
+    ("PPP-ETHER"    . ,+DLT_PPP_ETHER+)
+    ("PPP-PPPD"     . ,+DLT_PPP_PPPD+)
+    ("802.11-WLAN"  . ,+DLT_802_11+)
+    ("USB-LINUX"    . ,+DLT_USB_LINUX+)))
 
 (defparameter *pcap-version* nil
   "Version of native libpcap library.")
@@ -74,7 +74,11 @@
 
 (use-foreign-library libpcap)
 
-;;; ------------------------------
+
+;;;
+;;; Structures
+;;;
+
 
 (defcenum pcap_direction_t
   :PCAP_D_INOUT
@@ -136,8 +140,10 @@
   (jf :uchar)
   (k :int32))
 
-;;; ------------------------------
+
+;;;
 ;;; Functions
+;;;
 
 
 (defcfun ("memcpy" %memcpy) :pointer
@@ -154,8 +160,6 @@
 (defcfun ("link_ntoa" %link-ntoa) :string
   (sdl :pointer))
 
-
-;;; Pcap specific
 
 (defcfun ("pcap_open_live" %pcap-open-live) :pointer ; pcap_t *
   (device :string)
@@ -330,6 +334,5 @@
 
 (defcfun ("pcap_dump_close" %pcap-dump-close) :void
   (dumper :pointer))                    ; pcap_dumper_t *
-
 
 (setf *pcap-version* (%pcap-lib-version))
