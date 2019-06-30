@@ -755,7 +755,6 @@ beyond simple assertions of argument checks, are raised by this function."))
 ;;;
 
 
-;; Signals network-interface-error
 (defun find-all-devs ()
   "Return a list of all network devices that can be opened for capture.
 Result list mirrors layout explained in pcap_findalldevs(3).
@@ -770,7 +769,7 @@ Signals `NETWORK-INTERFACE-ERROR' on errors."
       (labels ((ipv4-extract (data)     ; Extract ipv4 address
                  (let ((ptr (inc-pointer (foreign-slot-pointer data
                                                                'sockaddr
-                                                               'sa_data)
+							       'sa_data)
                                          2)))
                    (with-foreign-object (str :char 16)
                      (let ((res (%inet-ntop 2 ptr str 16)))
@@ -779,33 +778,44 @@ Signals `NETWORK-INTERFACE-ERROR' on errors."
                          (t (foreign-string-to-lisp str)))))))
                (ipv6-extract (data)     ; Extract ipv6 address
                  (let ((ptr (inc-pointer (foreign-slot-pointer data
-                                                               'sockaddr
-                                                               'sa_data)
-                                         6)))
-                   (with-foreign-object (str :char 46)
-                     (let ((res (%inet-ntop 30 ptr str 46)))
-                       (case res
-                         (0 nil)
-                         (t (foreign-string-to-lisp str)))))))
-               (link-extract (data)     ; Extract link-layer address
-                 (%link-ntoa data))
+							       'sockaddr_in6
+							       'in6_addr)
+					 6)))
+		   (with-foreign-object (str :char 46)
+		     (let ((res (%inet-ntop 10 ptr str 46)))
+		       (case res
+			 (0 nil)
+			 (t (foreign-string-to-lisp str)))))))
+	       (link-extract (data)     ; Extract link-layer address
+		 (with-foreign-slots ((sll_family 
+				       sll_protocol
+				       sll_ifindex
+				       sll_haltype
+				       sll_pkttype
+				       sll_halen
+				       sll_addr) data sockaddr_ll)
+		   (let (rez)
+		     (dotimes (i 6)
+		       (push (mem-ref sll_addr :uint8 i) rez))
+		     (format nil "~{~2,'0x~^:~}" (reverse rez)))))
                (process-sockaddr (addr tag) ; Extract address-specific details
                  (when (null-pointer-p addr)
                    (return-from process-sockaddr nil))
-                 (with-foreign-slots ((sa_len sa_family) addr sockaddr)
-                   (let (output fam)
-                     (case sa_family
-                       (0 (setf fam :AF_UNSPEC)
-                          (setf output :UNSUPPORTED))
-                       (2 (setf fam :AF_INET)
-                          (setf output (ipv4-extract addr)))
-                       (30 (setf fam :AF_INET6)
-                           (setf output (ipv6-extract addr)))
-                       (18 (setf fam :AF_LINK)
-                           (setf output (link-extract addr)))
-                       (t (setf fam :UNSUPPORTED)
-                          (setf output :UNSUPPORTED)))
-                     (list tag fam output)))))
+		 ;;sockadr bits/socket.h
+                 (with-foreign-slots ((sa_family_len sa_data) addr sockaddr)
+		   (let (output fam)
+		     (case sa_family_len
+		       (0 (setf fam :AF_UNSPEC)
+			(setf output :UNSUPPORTED))
+		       (2 (setf fam :AF_INET)
+			(setf output (ipv4-extract addr)))
+		       (10 (setf fam :AF_INET6)
+			(setf output (ipv6-extract addr)))
+		       (17 (setf fam :AF_LINK)
+			(setf output (link-extract addr)))
+		       (t (setf fam :UNSUPPORTED)
+			(setf output :UNSUPPORTED)))
+		     (list tag fam output)))))
         (loop :with ifhead = (mem-ref devp :pointer)
            :and lis = ()
            :and addrlist = ()

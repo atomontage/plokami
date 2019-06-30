@@ -114,9 +114,31 @@
 
 (defcstruct sockaddr
   "BSD SOCKADDR structure."
-  (sa_len :uint8)
-  (sa_family :uint8)
-  (sa_data :char))
+  (sa_family_len :unsigned-short)
+  (sa_data :char :count 14))
+
+(defcstruct in6_addr
+  "IPv6 address"
+  (s6_addr :uint8 :count 16))
+
+;; from netinet/in.h
+(defcstruct sockaddr_in6
+  "Structure describing an IPv6 socket  address."
+  (int6_family :unsigned-short)
+  (sin6_flowinfo :uint32)
+  (in6_addr (:struct in6_addr))
+  (sin6_scope_id :uint32))
+
+;; from netpacket/packet.h
+(defcstruct sockaddr_ll
+  "A device-independent physical-layer address."
+  (sll_family :unsigned-short)
+  (sll_protocol :unsigned-short)
+  (sll_ifindex :int)
+  (sll_haltype :unsigned-short)
+  (sll_pkttype :unsigned-char)
+  (sll_halen :unsigned-char)
+  (sll_addr :unsigned-char :count 8)) ;/* Physical-layer address */
 
 ;; Missing field for win32
 (defcstruct pcap_stat
