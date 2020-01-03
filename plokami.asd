@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10 -*-
 
-;;;; Copyright (c) 2008, xristos@sdf.lonestar.org.  All rights reserved.
+;;;; Copyright (c) 2008, xristos@sdf.org.  All rights reserved.
 ;;;; Redistribution and use in source and binary forms, with or without
 ;;;; modification, are permitted provided that the following conditions
 ;;;; are met:
@@ -28,7 +28,7 @@
 (defsystem :plokami
   :name "Plokami"
   :description "Common Lisp PCAP interface."
-  :author "xristos@sdf.lonestar.org"
+  :author "xristos@sdf.org"
   :serial t
   :license "BSD"
   :version "1.5"

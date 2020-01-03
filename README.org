@@ -25,4 +25,4 @@ whatever you want.
 [[https://atomontage.github.io/plokami]]
 
 * Author
-xristos (AT) sdf (DOT) lonestar (DOT) org
+xristos (AT) sdf (DOT) org
